@@ -54,11 +54,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       U& data,
       const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
-    ) -> i2cdev_result_t
-    {
-        static_assert(std::is_same_v<typename U::value_type, std::uint8_t>, "U must be a container of std::uint8_t");
-        return this->readReg8(devAddr, regAddr, data.size(), data.data(), timeout);
-    }
+    ) -> i2cdev_result_t;
 
     /// Read a single byte from an 8-bit device register.
     ///
@@ -74,10 +70,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       std::uint8_t* const data,
       const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
-    ) -> i2cdev_result_t
-    {
-        return this->readReg8(devAddr, regAddr, 1, data, timeout);
-    }
+    ) -> i2cdev_result_t;
 
     /// Write multiple bytes to an 8-bit device register.
     ///
@@ -107,11 +100,7 @@ class I2CDevBus {
     /// \retval I2CDEV_RESULT_OK If the read operation was successful
     template<typename U>
     [[nodiscard]] auto
-      writeReg8(const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const U& data) -> i2cdev_result_t
-    {
-        static_assert(std::is_same_v<typename U::value_type, std::uint8_t>, "U must be a container of std::uint8_t");
-        return this->writeReg8(devAddr, regAddr, data.size(), data.data());
-    }
+      writeReg8(const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const U& data) -> i2cdev_result_t;
 
     /// Write a single byte to an 8-bit device register.
     ///
@@ -123,10 +112,7 @@ class I2CDevBus {
     /// \retval I2CDEV_RESULT_OK If the read operation was successful
     [[nodiscard]] inline auto writeReg8(
       const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint8_t data
-    ) -> i2cdev_result_t
-    {
-        return this->writeReg8(devAddr, regAddr, 1, &data);
-    }
+    ) -> i2cdev_result_t;
 
     /// Update a single byte on an 8-bit device register.
     ///
@@ -145,25 +131,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       const std::uint8_t mask,
       const std::uint8_t value
-    ) -> i2cdev_result_t
-    {
-        std::uint8_t old_data;
-
-        const auto read_result = this->readReg8(devAddr, regAddr, &old_data);
-        if (read_result != I2CDEV_RESULT_OK) {
-            return read_result;
-        }
-
-        const std::uint8_t new_data = (old_data & ~mask) | (value & mask);
-
-#if !defined(I2CDEV_ALWAYS_UPDATE) || !I2CDEV_ALWAYS_UPDATE
-        if (old_data == new_data) {
-            return I2CDEV_RESULT_OK;
-        }
-#endif
-
-        return this->writeReg8(devAddr, regAddr, new_data);
-    }
+    ) -> i2cdev_result_t;
 
     [[nodiscard]] inline auto updateReg8Bits(
       const i2cdev_dev_addr_t devAddr,
@@ -171,18 +139,11 @@ class I2CDevBus {
       const std::uint8_t startBit,
       const std::uint8_t length,
       const std::uint8_t value
-    ) -> i2cdev_result_t
-    {
-        const std::uint8_t mask = (1 << length) - 1;
-        return this->updateReg8(devAddr, regAddr, mask << startBit, value << startBit);
-    }
+    ) -> i2cdev_result_t;
 
     [[nodiscard]] inline auto updateReg8Bit(
       const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint8_t bit, const bool value
-    ) -> i2cdev_result_t
-    {
-        return this->updateReg8(devAddr, regAddr, value ? (1 << bit) : 0, 1 << bit);
-    }
+    ) -> i2cdev_result_t;
 
     // endregion
 
@@ -223,12 +184,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       U& data,
       const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
-    ) -> i2cdev_result_t
-    {
-        static_assert(std::is_same_v<typename U::value_type, std::uint16_t>, "U must be a container of std::uint16_t");
-
-        return this->readReg16(devAddr, regAddr, data.size(), data.data(), timeout);
-    }
+    ) -> i2cdev_result_t;
 
     /// Read a single word from a 16-bit device register.
     ///
@@ -244,10 +200,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       std::uint16_t* const data,
       const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
-    ) -> i2cdev_result_t
-    {
-        return this->readReg16(devAddr, regAddr, 1, data, timeout);
-    }
+    ) -> i2cdev_result_t;
 
     /// Write multiple words to a 16-bit device register.
     ///
@@ -277,12 +230,7 @@ class I2CDevBus {
     /// \retval I2CDEV_RESULT_OK If the read operation was successful
     template<typename U>
     [[nodiscard]] auto
-      writeReg16(const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const U& data) -> i2cdev_result_t
-    {
-        static_assert(std::is_same_v<typename U::value_type, std::uint16_t>, "U must be a container of std::uint16_t");
-
-        return this->writeReg16(devAddr, regAddr, data.size(), data.data());
-    }
+      writeReg16(const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const U& data) -> i2cdev_result_t;
 
     /// Write a single word to a 16-bit device register.
     ///
@@ -294,10 +242,7 @@ class I2CDevBus {
     /// \retval I2CDEV_RESULT_OK If the read operation was successful
     [[nodiscard]] inline auto writeReg16(
       const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint16_t data
-    ) -> i2cdev_result_t
-    {
-        return this->writeReg16(devAddr, regAddr, 1, &data);
-    }
+    ) -> i2cdev_result_t;
 
     /// Update a single word on a 16-bit device register.
     ///
@@ -316,25 +261,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       const std::uint16_t mask,
       const std::uint16_t value
-    ) -> i2cdev_result_t
-    {
-        std::uint16_t old_data;
-
-        const auto read_result = this->readReg16(devAddr, regAddr, &old_data);
-        if (read_result != I2CDEV_RESULT_OK) {
-            return read_result;
-        }
-
-        const std::uint16_t new_data = (old_data & ~mask) | (value & mask);
-
-#if !defined(I2CDEV_ALWAYS_UPDATE) || !I2CDEV_ALWAYS_UPDATE
-        if (old_data == new_data) {
-            return I2CDEV_RESULT_OK;
-        }
-#endif
-
-        return this->writeReg16(devAddr, regAddr, new_data);
-    }
+    ) -> i2cdev_result_t;
 
     [[nodiscard]] inline auto updateReg16Bits(
       const i2cdev_dev_addr_t devAddr,
@@ -342,20 +269,179 @@ class I2CDevBus {
       const std::uint8_t startBit,
       const std::uint8_t length,
       const std::uint16_t value
-    ) -> i2cdev_result_t
-    {
-        const std::uint16_t mask = (1U << length) - 1;
-        return this->updateReg16(devAddr, regAddr, mask << startBit, value << startBit);
-    }
+    ) -> i2cdev_result_t;
 
     [[nodiscard]] inline auto updateReg16Bit(
       const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint8_t bit, const bool value
-    ) -> i2cdev_result_t
-    {
-        return this->updateReg16(devAddr, regAddr, value ? (1 << bit) : 0, 1 << bit);
-    }
+    ) -> i2cdev_result_t;
 
     // endregion
 };
+
+template<typename U>
+[[nodiscard]] auto I2CDevBus::readReg8(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    U& data,
+    const std::uint16_t timeout
+) -> i2cdev_result_t
+{
+    static_assert(std::is_same<typename U::value_type, std::uint8_t>::value, "U must be a container of std::uint8_t");
+    return this->readReg8(devAddr, regAddr, data.size(), data.data(), timeout);
+}
+
+[[nodiscard]] inline auto I2CDevBus::readReg8(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    std::uint8_t* const data,
+    const std::uint16_t timeout
+) -> i2cdev_result_t
+{
+    return this->readReg8(devAddr, regAddr, 1, data, timeout);
+}
+
+template<typename U>
+[[nodiscard]] auto I2CDevBus::writeReg8(
+    const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const U& data
+) -> i2cdev_result_t
+{
+    static_assert(std::is_same<typename U::value_type, std::uint8_t>::value, "U must be a container of std::uint8_t");
+    return this->writeReg8(devAddr, regAddr, data.size(), data.data());
+}
+
+[[nodiscard]] inline auto I2CDevBus::writeReg8(
+    const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint8_t data
+) -> i2cdev_result_t
+{
+    return this->writeReg8(devAddr, regAddr, 1, &data);
+}
+
+[[nodiscard]] auto I2CDevBus::updateReg8(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    const std::uint8_t mask,
+    const std::uint8_t value
+) -> i2cdev_result_t
+{
+    std::uint8_t old_data;
+
+    const auto read_result = this->readReg8(devAddr, regAddr, &old_data);
+    if (read_result != I2CDEV_RESULT_OK) {
+        return read_result;
+    }
+
+    const std::uint8_t new_data = (old_data & ~mask) | (value & mask);
+
+#if !defined(I2CDEV_ALWAYS_UPDATE) || !I2CDEV_ALWAYS_UPDATE
+    if (old_data == new_data) {
+        return I2CDEV_RESULT_OK;
+    }
+#endif
+
+    return this->writeReg8(devAddr, regAddr, new_data);
+}
+
+[[nodiscard]] inline auto I2CDevBus::updateReg8Bits(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    const std::uint8_t startBit,
+    const std::uint8_t length,
+    const std::uint8_t value
+) -> i2cdev_result_t
+{
+    const std::uint8_t mask = (1 << length) - 1;
+    return this->updateReg8(devAddr, regAddr, mask << startBit, value << startBit);
+}
+
+[[nodiscard]] inline auto I2CDevBus::updateReg8Bit(
+    const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint8_t bit, const bool value
+) -> i2cdev_result_t
+{
+    return this->updateReg8(devAddr, regAddr, value ? (1 << bit) : 0, 1 << bit);
+}
+
+template<typename U>
+[[nodiscard]] auto I2CDevBus::readReg16(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    U& data,
+    const std::uint16_t timeout
+) -> i2cdev_result_t
+{
+    static_assert(std::is_same<typename U::value_type, std::uint16_t>::value, "U must be a container of std::uint16_t");
+
+    return this->readReg16(devAddr, regAddr, data.size(), data.data(), timeout);
+}
+
+[[nodiscard]] inline auto I2CDevBus::readReg16(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    std::uint16_t* const data,
+    const std::uint16_t timeout
+) -> i2cdev_result_t
+{
+    return this->readReg16(devAddr, regAddr, 1, data, timeout);
+}
+
+template<typename U>
+[[nodiscard]] auto I2CDevBus::writeReg16(
+    const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const U& data
+) -> i2cdev_result_t
+{
+    static_assert(std::is_same<typename U::value_type, std::uint16_t>::value, "U must be a container of std::uint16_t");
+
+    return this->writeReg16(devAddr, regAddr, data.size(), data.data());
+}
+
+[[nodiscard]] inline auto I2CDevBus::writeReg16(
+    const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint16_t data
+) -> i2cdev_result_t
+{
+    return this->writeReg16(devAddr, regAddr, 1, &data);
+}
+
+[[nodiscard]] auto I2CDevBus::updateReg16(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    const std::uint16_t mask,
+    const std::uint16_t value
+) -> i2cdev_result_t
+{
+    std::uint16_t old_data;
+
+    const auto read_result = this->readReg16(devAddr, regAddr, &old_data);
+    if (read_result != I2CDEV_RESULT_OK) {
+        return read_result;
+    }
+
+    const std::uint16_t new_data = (old_data & ~mask) | (value & mask);
+
+#if !defined(I2CDEV_ALWAYS_UPDATE) || !I2CDEV_ALWAYS_UPDATE
+    if (old_data == new_data) {
+        return I2CDEV_RESULT_OK;
+    }
+#endif
+
+    return this->writeReg16(devAddr, regAddr, new_data);
+}
+
+[[nodiscard]] inline auto I2CDevBus::updateReg16Bits(
+    const i2cdev_dev_addr_t devAddr,
+    const i2cdev_reg_addr_t regAddr,
+    const std::uint8_t startBit,
+    const std::uint8_t length,
+    const std::uint16_t value
+) -> i2cdev_result_t
+{
+    const std::uint16_t mask = (1U << length) - 1;
+    return this->updateReg16(devAddr, regAddr, mask << startBit, value << startBit);
+}
+
+[[nodiscard]] inline auto I2CDevBus::updateReg16Bit(
+    const i2cdev_dev_addr_t devAddr, const i2cdev_reg_addr_t regAddr, const std::uint8_t bit, const bool value
+) -> i2cdev_result_t
+{
+    return this->updateReg16(devAddr, regAddr, value ? (1 << bit) : 0, 1 << bit);
+}
 
 #endif // __I2CDEVBUS_HPP__
