@@ -3,8 +3,14 @@
 
 #include "i2cdevbus.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #define INA219_I2CADDR_BASE (0x40) // A0 and A1 tied to GND
 #define INA219_I2CADDR_GET(A0, A1) (0x40 | ((A0) != 0 ? 0x01 : 0x00) | ((A1) != 0 ? 0x04 : 0x00))
+
+#define INA219_CREATE_MASK(shift, length) (((1 << (length)) - 1) << (shift))
 
 typedef enum ina219_reg_t {
     /// Configuration Register
@@ -21,9 +27,15 @@ typedef enum ina219_reg_t {
     INA219_REG_CALIBRATION = (0x05)
 } ina219_reg_t;
 
-#define INA219_CONFIG_RESET (0x8000) // 0b1000000000000000
+#define INA219_CONFIG_DEFAULT (0x399F) // Datasheet 8.6.1
 
-#define INA219_CONFIG_BUS_VOLTAGE_RANGE_MASK (0x2000) // 0b0010000000000000
+#define INA219_CONFIG_RESET_SHIFT (15)
+#define INA219_CONFIG_RESET_LENGTH (1)
+#define INA219_CONFIG_RESET INA219_CREATE_MASK(INA219_CONFIG_RESET_SHIFT, INA219_CONFIG_RESET_LENGTH)
+
+#define INA219_CONFIG_BUS_VOLTAGE_RANGE_SHIFT (13)
+#define INA219_CONFIG_BUS_VOLTAGE_RANGE_LENGTH (1)
+#define INA219_CONFIG_BUS_VOLTAGE_RANGE_MASK INA219_CREATE_MASK(INA219_CONFIG_BUS_VOLTAGE_RANGE_SHIFT, INA219_CONFIG_BUS_VOLTAGE_RANGE_LENGTH)
 typedef enum ina219_bus_voltage_range_t {
     /// 0-16V Range
     INA219_CONFIG_BUS_VOLTAGE_RANGE_16V = (0x0000), // 0b0000000000000000
@@ -31,7 +43,9 @@ typedef enum ina219_bus_voltage_range_t {
     INA219_CONFIG_BUS_VOLTAGE_RANGE_32V = (0x2000) // 0b0010000000000000
 } ina219_bus_voltage_range_t;
 
-#define INA218_CONFIG_GAIN_MASK (0x1800) // 0b0001100000000000
+#define INA219_CONFIG_GAIN_SHIFT (11)
+#define INA219_CONFIG_GAIN_LENGTH (2)
+#define INA218_CONFIG_GAIN_MASK INA219_CREATE_MASK(INA219_CONFIG_GAIN_SHIFT, INA219_CONFIG_GAIN_LENGTH)
 typedef enum ina219_gain_t {
     /// Gain 1, 40mV Range
     INA219_CONFIG_GAIN_1_40MV = (0x0000), // 0b0000000000000000
@@ -43,7 +57,9 @@ typedef enum ina219_gain_t {
     INA219_CONFIG_GAIN_8_320MV = (0x1800) // 0b0001100000000000
 } ina219_gain_t;
 
-#define INA219_CONFIG_BUS_ADC_MASK (0x0780) // 0b0000011110000000
+#define INA219_CONFIG_BADC_SHIFT (7)
+#define INA219_CONFIG_BADC_LENGTH (4)
+#define INA219_CONFIG_BUS_ADC_MASK INA219_CREATE_MASK(INA219_CONFIG_BADC_SHIFT, INA219_CONFIG_BADC_LENGTH)
 typedef enum ina219_bus_adc_t {
     /// 9-bit bus resolution (0-511)
     INA219_CONFIG_BUS_ADC_9BIT = (0x0000),
@@ -69,7 +85,9 @@ typedef enum ina219_bus_adc_t {
     INA219_CONFIG_BUS_ADC_12BIT_128S = (0x0780)
 } ina219_bus_adc_t;
 
-#define INA219_CONFIG_SHUNT_ADC_MASK (0x0078) // 0b0000001111000
+#define INA219_CONFIG_SADC_SHIFT (3)
+#define INA219_CONFIG_SADC_LENGTH (4)
+#define INA219_CONFIG_SHUNT_ADC_MASK INA219_CREATE_MASK(INA219_CONFIG_SADC_SHIFT, INA219_CONFIG_SADC_LENGTH)
 typedef enum ina219_shunt_adc_t {
     /// 9-bit shunt resolution (0-511)
     INA219_CONFIG_SHUNT_ADC_9BIT = (0x0000),
@@ -95,7 +113,9 @@ typedef enum ina219_shunt_adc_t {
     INA219_CONFIG_SHUNT_ADC_12BIT_128S = (0x0078)
 } ina219_shunt_adc_t;
 
-#define INA219_CONFIG_MODE_MASK (0x0007) // 0b0000000000000111
+#define INA219_CONFIG_MODE_SHIFT (0)
+#define INA219_CONFIG_MODE_LENGTH (3)
+#define INA219_CONFIG_MODE_MASK INA219_CREATE_MASK(INA219_CONFIG_MODE_SHIFT, INA219_CONFIG_MODE_LENGTH)
 typedef enum ina219_mode_t {
     /// Power-Down
     INA219_CONFIG_MODE_POWERDOWN = (0x0000), // 0b0000000000000000
@@ -114,5 +134,49 @@ typedef enum ina219_mode_t {
     /// Shunt and Bus, Continuous
     INA219_CONFIG_MODE_SHUNT_BUS_CONTINUOUS = (0x0007) // 0b0000000000000111
 } ina219_mode_t;
+
+uint16_t ina219_config_set_bus_voltage_range(uint16_t config, ina219_bus_voltage_range_t range) {
+    return (config & ~INA219_CONFIG_BUS_VOLTAGE_RANGE_MASK) | (static_cast<uint16_t>(range));
+}
+
+ina219_bus_voltage_range_t ina219_config_get_bus_voltage_range(uint16_t config) {
+    return static_cast<ina219_bus_voltage_range_t>(config & INA219_CONFIG_BUS_VOLTAGE_RANGE_MASK);
+}
+
+uint16_t ina219_config_set_gain(uint16_t config, ina219_gain_t gain) {
+    return (config & ~INA218_CONFIG_GAIN_MASK) | (static_cast<uint16_t>(gain));
+}
+
+ina219_gain_t ina219_config_get_gain(uint16_t config) {
+    return static_cast<ina219_gain_t>(config & INA218_CONFIG_GAIN_MASK);
+}
+
+uint16_t ina219_config_set_bus_adc(uint16_t config, ina219_bus_adc_t adc) {
+    return (config & ~INA219_CONFIG_BUS_ADC_MASK) | (static_cast<uint16_t>(adc));
+}
+
+ina219_bus_adc_t ina219_config_get_bus_adc(uint16_t config) {
+    return static_cast<ina219_bus_adc_t>(config & INA219_CONFIG_BUS_ADC_MASK);
+}
+
+uint16_t ina219_config_set_shunt_adc(uint16_t config, ina219_shunt_adc_t adc) {
+    return (config & ~INA219_CONFIG_SHUNT_ADC_MASK) | (static_cast<uint16_t>(adc));
+}
+
+ina219_shunt_adc_t ina219_config_get_shunt_adc(uint16_t config) {
+    return static_cast<ina219_shunt_adc_t>(config & INA219_CONFIG_SHUNT_ADC_MASK);
+}
+
+uint16_t ina219_config_set_mode(uint16_t config, ina219_mode_t mode) {
+    return (config & ~INA219_CONFIG_MODE_MASK) | (static_cast<uint16_t>(mode));
+}
+
+ina219_mode_t ina219_config_get_mode(uint16_t config) {
+    return static_cast<ina219_mode_t>(config & INA219_CONFIG_MODE_MASK);
+}
+
+#ifdef __cplusplus
+};
+#endif // __cplusplus
 
 #endif //__I2CDEVLIB_INA219_H__

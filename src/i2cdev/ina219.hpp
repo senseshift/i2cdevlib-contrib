@@ -95,9 +95,9 @@ namespace i2cdev {
         {
             uint16_t calValue = 0x2800;
             auto result = this->_bus->writeReg16(
-                    this->_addr,
-                    INA219_REG_CALIBRATION,
-                    static_cast<uint16_t>(calValue)
+                this->_addr,
+                INA219_REG_CALIBRATION,
+                static_cast<uint16_t>(calValue)
             );
             if (result != I2CDEV_RESULT_OK) {
                 return result;
@@ -106,7 +106,7 @@ namespace i2cdev {
             this->_calValue = calValue;
 
             result = this->setConfig(
-                    (INA219_CONFIG_BUS_VOLTAGE_RANGE_32V | INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BUS_ADC_12BIT | INA219_CONFIG_SHUNT_ADC_12BIT | INA219_CONFIG_MODE_SHUNT_BUS_CONTINUOUS)
+                (INA219_CONFIG_BUS_VOLTAGE_RANGE_32V | INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BUS_ADC_12BIT | INA219_CONFIG_SHUNT_ADC_12BIT | INA219_CONFIG_MODE_SHUNT_BUS_CONTINUOUS)
             );
             if (result != I2CDEV_RESULT_OK) {
                 return result;
@@ -122,9 +122,9 @@ namespace i2cdev {
         {
             uint16_t calValue = 0x2000;
             auto result = this->_bus->writeReg16(
-                    this->_addr,
-                    INA219_REG_CALIBRATION,
-                    static_cast<uint16_t>(calValue)
+                this->_addr,
+                INA219_REG_CALIBRATION,
+                static_cast<uint16_t>(calValue)
             );
             if (result != I2CDEV_RESULT_OK) {
                 return result;
@@ -133,7 +133,7 @@ namespace i2cdev {
             this->_calValue = calValue;
 
             result = this->setConfig(
-                    (INA219_CONFIG_BUS_VOLTAGE_RANGE_32V | INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BUS_ADC_12BIT | INA219_CONFIG_SHUNT_ADC_12BIT | INA219_CONFIG_MODE_SHUNT_BUS_CONTINUOUS)
+                (INA219_CONFIG_BUS_VOLTAGE_RANGE_32V | INA219_CONFIG_GAIN_8_320MV | INA219_CONFIG_BUS_ADC_12BIT | INA219_CONFIG_SHUNT_ADC_12BIT | INA219_CONFIG_MODE_SHUNT_BUS_CONTINUOUS)
             );
             if (result != I2CDEV_RESULT_OK) {
                 return result;
@@ -144,6 +144,8 @@ namespace i2cdev {
 
             return result;
         }
+
+      private:
 
         auto setConfig(uint16_t config) -> i2cdev_result_t
         {
@@ -161,8 +163,6 @@ namespace i2cdev {
 
             return result;
         }
-
-      private:
 
         auto readRawShuntVoltage() -> int16_t
         {
