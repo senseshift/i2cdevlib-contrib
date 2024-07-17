@@ -50,7 +50,7 @@ void loop() {
 
     Serial.println("\t > SERVO_PULSE_LEN_MIN => SERVO_PULSE_LEN_MAX");
     for (uint16_t pulseLen = SERVO_PULSE_LEN_MIN; pulseLen < SERVO_PULSE_LEN_MAX; pulseLen++) {
-        result = pca9685.setPin(currentServo, pulseLen);
+        result = pca9685.setChannel(currentServo, pulseLen);
         if (result != I2CDEV_RESULT_OK) {
             Serial.printf("[E] Failed to set PCA9685 pin: %i\n", result);
         }
@@ -62,7 +62,7 @@ void loop() {
 
     Serial.println("\t > SERVO_PULSE_LEN_MAX => SERVO_PULSE_LEN_MIN");
     for (uint16_t pulseLen = SERVO_PULSE_LEN_MAX; pulseLen > SERVO_PULSE_LEN_MIN; pulseLen--) {
-        result = pca9685.setPin(currentServo, pulseLen);
+        result = pca9685.setChannel(currentServo, pulseLen);
         if (result != I2CDEV_RESULT_OK) {
             Serial.printf("[E] Failed to set PCA9685 pin: %i\n", result);
         }

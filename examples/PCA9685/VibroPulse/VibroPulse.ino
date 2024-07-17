@@ -38,9 +38,9 @@ void setup() {
 }
 
 void pulse(uint8_t pin) {
-    pca9685.setPin(pin, 4095);
+    pca9685.setChannel(pin, 4095);
     delay(250);
-    pca9685.setPin(pin, 0);
+    pca9685.setChannel(pin, 0);
 }
 
 uint8_t currentVibro = 0;

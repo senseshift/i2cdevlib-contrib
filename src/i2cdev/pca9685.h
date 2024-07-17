@@ -37,14 +37,16 @@
 #define PCA9685_MODE2_OCH (0x08)
 #define PCA9685_MODE2_INVRT (0x10)
 
-#define PCA9685_PRESCALE_MIN (3)
-#define PCA9685_PRESCALE_MAX (255)
+// Datasheet 7.3.5
+#define PCA9685_PRESCALE_MIN (0x03)
+#define PCA9685_PRESCALE_MAX (0xff)
+#define PCA9685_FREQ_MIN (24)
+#define PCA9685_FREQ_MAX (1526)
 
-//#define PCA9685_FREQ_MIN (24)
-//#define PCA9685_FREQ_MAX (1526)
+#define PCA9685_OSCILLATOR_FREQ (25000000)
 
-#define PCA9685_FREQ_MIN (1)
-#define PCA9685_FREQ_MAX (2500)
+#define PCA9685_VALUE_MAX (4095)
+#define PCA9685_VALUE_FULL_ON (4096)
 
 #ifdef __cplusplus
 extern "C" {
