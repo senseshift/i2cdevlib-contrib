@@ -80,15 +80,20 @@ namespace i2cdev {
 
         [[nodiscard]] inline auto setFrequency(float freq) -> i2cdev_result_t
         {
+            // Clamp frequency
             freq = (freq > PCA9685_FREQ_MAX) ? PCA9685_FREQ_MAX : (freq < PCA9685_FREQ_MIN) ? PCA9685_FREQ_MIN : freq;
-            auto prescale = static_cast<uint8_t>(((this->_oscillator_freq / (4096.0 * freq)) + 0.5) - 1);
+
+            // Datasheet 7.3.5
+            auto prescale = static_cast<uint8_t>(roundf((float) this->_oscillator_freq / (4096.0 * freq)) - 1);
 
             return this->setPrescale(prescale);
         }
 
         [[nodiscard]] auto setPrescale(uint8_t prescale, bool extClk = false) -> i2cdev_result_t
         {
+            // Don't check if larger than PCA9685_PRESCALE_MAX (255), since it's an uint8_t
             if (prescale < PCA9685_PRESCALE_MIN) {
+                I2CDEVLIB_LOG_E("Prescale value out of range: %i; must be between 3 and 255", prescale);
                 return I2CDEV_RESULT_ERROR;
             }
 
@@ -133,9 +138,10 @@ namespace i2cdev {
             return result;
         }
 
-        [[nodiscard]] auto setPwm(uint8_t led, int16_t on_value, int16_t off_value) -> i2cdev_result_t
+        [[nodiscard]] auto setChannelOnOff(uint8_t led, int16_t on_value, int16_t off_value) -> i2cdev_result_t
         {
             if (led > 15) {
+                I2CDEVLIB_LOG_E("LED index out of range: %i; must be between 0 and 15", led);
                 return I2CDEV_RESULT_ERROR;
             }
 
@@ -154,36 +160,43 @@ namespace i2cdev {
             );
         }
 
-        [[nodiscard]] auto setPin(uint8_t led, uint16_t value, bool invert = false) -> i2cdev_result_t
+        [[nodiscard]] auto setChannel(uint8_t led, uint16_t value, bool invert = false) -> i2cdev_result_t
         {
             // Clamp value to 12 bits
-            value = (value < 0) ? 0 : (value > 4095) ? 4095 : value;
+            value = (value > PCA9685_VALUE_MAX) ? PCA9685_VALUE_MAX : value;
 
             if (invert) {
                 if (value == 0) {
-                    return this->setPwm(led, 4096, 0);
+                    return this->setChannelOnOff(led, PCA9685_VALUE_FULL_ON, 0);
                 }
-                if (value == 4095) {
-                    return this->setPwm(led, 0, 4096);
+                if (value == PCA9685_VALUE_MAX) {
+                    return this->setChannelOnOff(led, 0, PCA9685_VALUE_FULL_ON);
                 }
-                return this->setPwm(led, 0, 4095 - value);
+                return this->setChannelOnOff(led, 0, PCA9685_VALUE_MAX - value);
             } else {
-                if (value == 4095) {
-                    return this->setPwm(led, 4096, 0);
+                if (value == PCA9685_VALUE_MAX) {
+                    return this->setChannelOnOff(led, PCA9685_VALUE_FULL_ON, 0);
                 }
                 if (value == 0) {
-                    return this->setPwm(led, 0, 4096);
+                    return this->setChannelOnOff(led, 0, PCA9685_VALUE_FULL_ON);
                 }
-                return this->setPwm(led, 0, value);
+                return this->setChannelOnOff(led, 0, value);
             }
         }
 
-        [[nodiscard]] inline auto writeMicroseconds(uint8_t led, uint16_t value) -> i2cdev_result_t
+        /// Arduino-style API for Servos
+        ///
+        /// @param led The LED number (0-15)
+        /// @param microseconds The pulse length in microseconds
+        ///
+        /// @return The result of the operation
+        /// @retval I2CDEV_RESULT_OK if the operation was successful
+        [[nodiscard]] inline auto writeMicroseconds(uint8_t led, uint16_t microseconds) -> i2cdev_result_t
         {
-            return this->setPin(
+            return this->setChannel(
                 led,
                 static_cast<uint16_t>(
-                    value / (1000000.0 / this->_oscillator_freq * (this->_prescale + 1))
+                    microseconds / (1000000.0 / this->_oscillator_freq * (this->_prescale + 1))
                 )
             );
         }
@@ -192,7 +205,7 @@ namespace i2cdev {
         uint8_t _addr;
         I2CDevBus* _bus;
 
-        uint32_t _oscillator_freq = 25000000;
+        uint32_t _oscillator_freq = PCA9685_OSCILLATOR_FREQ;
         uint8_t _prescale;
     };
 }
