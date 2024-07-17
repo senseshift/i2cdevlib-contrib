@@ -1,0 +1,59 @@
+#ifndef __I2CDEVLIB_PCA9685_H__
+#define __I2CDEVLIB_PCA9685_H__
+
+#include "i2cdevbus.h"
+
+#define PCA9685_I2CADDR_BASE (0x40)
+
+#define PCA9685_REG_MODE1 (0x00)
+#define PCA9685_REG_MODE2 (0x01)
+#define PCA9685_REG_SUBADR1 (0x02)
+#define PCA9685_REG_SUBADR2 (0x03)
+#define PCA9685_REG_SUBADR3 (0x04)
+#define PCA9685_REG_ALLCALLADR (0x05)
+#define PCA9685_REG_LED0_ON_L (0x06)
+#define PCA9685_REG_LED0_ON_H (0x07)
+#define PCA9685_REG_LED0_OFF_L (0x08)
+#define PCA9685_REG_LED0_OFF_H (0x09)
+#define PCA9685_REG_ALL_LED_ON_L (0xFA)
+#define PCA9685_REG_ALL_LED_ON_H (0xFB)
+#define PCA9685_REG_ALL_LED_OFF_L (0xFC)
+#define PCA9685_REG_ALL_LED_OFF_H (0xFD)
+#define PCA9685_REG_PRESCALE (0xFE)
+#define PCA9685_REG_TESTMODE (0xFF)
+
+#define PCA9685_MODE1_ALLCALL (0x01)
+#define PCA9685_MODE1_SUB3 (0x02)
+#define PCA9685_MODE1_SUB2 (0x04)
+#define PCA9685_MODE1_SUB1 (0x08)
+#define PCA9685_MODE1_SLEEP (0x10)
+#define PCA9685_MODE1_AI (0x20)
+#define PCA9685_MODE1_EXTCLK (0x40)
+#define PCA9685_MODE1_RESTART (0x80)
+
+#define PCA9685_MODE2_OUTNE_0 (0x01)
+#define PCA9685_MODE2_OUTNE_1 (0x02)
+#define PCA9685_MODE2_OUTDRV (0x04)
+#define PCA9685_MODE2_OCH (0x08)
+#define PCA9685_MODE2_INVRT (0x10)
+
+#define PCA9685_PRESCALE_MIN (3)
+#define PCA9685_PRESCALE_MAX (255)
+
+//#define PCA9685_FREQ_MIN (24)
+//#define PCA9685_FREQ_MAX (1526)
+
+#define PCA9685_FREQ_MIN (1)
+#define PCA9685_FREQ_MAX (2500)
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+//
+
+#ifdef __cplusplus
+};
+#endif // __cplusplus
+
+#endif // __I2CDEVLIB_PCA9685_H__
