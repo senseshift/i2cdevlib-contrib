@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+#include <string>
 
 #include "i2cdevbus.h"
 
@@ -34,7 +35,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       const std::size_t length,
       std::uint8_t* const data,
-      const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+      const std::uint16_t timeout = I2CDevBus::DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t = 0;
 
     /// Read multiple bytes from an 8-bit device register.
@@ -53,7 +54,7 @@ class I2CDevBus {
       const i2cdev_dev_addr_t devAddr,
       const i2cdev_reg_addr_t regAddr,
       U& data,
-      const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+      const std::uint16_t timeout = I2CDevBus::DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t;
 
     /// Read a single byte from an 8-bit device register.
@@ -69,7 +70,7 @@ class I2CDevBus {
       const i2cdev_dev_addr_t devAddr,
       const i2cdev_reg_addr_t regAddr,
       std::uint8_t* const data,
-      const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+      const std::uint16_t timeout = I2CDevBus::DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t;
 
     /// Write multiple bytes to an 8-bit device register.
@@ -164,7 +165,7 @@ class I2CDevBus {
       const i2cdev_reg_addr_t regAddr,
       const std::size_t length,
       std::uint16_t* const data,
-      const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+      const std::uint16_t timeout = I2CDevBus::DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t = 0;
 
     /// Read multiple words from a 16-bit device register.
@@ -183,7 +184,7 @@ class I2CDevBus {
       const i2cdev_dev_addr_t devAddr,
       const i2cdev_reg_addr_t regAddr,
       U& data,
-      const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+      const std::uint16_t timeout = I2CDevBus::DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t;
 
     /// Read a single word from a 16-bit device register.
@@ -199,7 +200,7 @@ class I2CDevBus {
       const i2cdev_dev_addr_t devAddr,
       const i2cdev_reg_addr_t regAddr,
       std::uint16_t* const data,
-      const std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+      const std::uint16_t timeout = I2CDevBus::DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t;
 
     /// Write multiple words to a 16-bit device register.
@@ -442,6 +443,30 @@ template<typename U>
 ) -> i2cdev_result_t
 {
     return this->updateReg16(devAddr, regAddr, value ? (1 << bit) : 0, 1 << bit);
+}
+
+namespace i2cdevlib {
+    using I2CDevBus = ::I2CDevBus;
+
+    /// hexdump() - Dump a buffer in hexadecimal format.
+    ///
+    /// \param [in] data Pointer to the buffer to dump
+    /// \param [in] length Number of bytes to dump
+    ///
+    /// \return A string containing the hexadecimal dump of the buffer
+    [[nodiscard]] auto hexdump(const std::uint8_t* data, const std::size_t length) -> std::string {
+        std::string result;
+        result.reserve(length * 3);
+
+        for (std::size_t i = 0; i < length; i++) {
+            result += "0x";
+            result += "0123456789ABCDEF"[data[i] >> 4];
+            result += "0123456789ABCDEF"[data[i] & 0x0F];
+            result += ' ';
+        }
+
+        return result;
+    }
 }
 
 #endif // __I2CDEVBUS_HPP__

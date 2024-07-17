@@ -4,6 +4,14 @@
 #include "i2cdevbus.hpp"
 #include <Wire.h>
 
+#ifdef ARDUINO_ESP32_DEV
+#  define I2CDEVLIB_LOG_V(...) log_v(__VA_ARGS__)
+#  define I2CDEVLIB_LOG_D(...) log_d(__VA_ARGS__)
+#  define I2CDEVLIB_LOG_I(...) log_i(__VA_ARGS__)
+#  define I2CDEVLIB_LOG_W(...) log_w(__VA_ARGS__)
+#  define I2CDEVLIB_LOG_E(...) log_e(__VA_ARGS__)
+#endif
+
 class ArduinoI2CDevBus : public I2CDevBus {
   public:
     explicit ArduinoI2CDevBus(TwoWire* wire = &Wire) : wire_(wire) {}
@@ -19,6 +27,8 @@ class ArduinoI2CDevBus : public I2CDevBus {
       std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t override
     {
+        I2CDEVLIB_LOG_D("readReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+
         this->wire_->beginTransmission(devAddr);
         this->wire_->write(regAddr);
         this->wire_->endTransmission();
@@ -52,6 +62,8 @@ class ArduinoI2CDevBus : public I2CDevBus {
       std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t override
     {
+        I2CDEVLIB_LOG_D("readReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+
         this->wire_->beginTransmission(devAddr);
         this->wire_->write(regAddr);
         this->wire_->endTransmission();
@@ -80,6 +92,8 @@ class ArduinoI2CDevBus : public I2CDevBus {
     auto writeReg8(std::uint8_t devAddr, std::uint8_t regAddr, std::size_t length, const std::uint8_t* data)
       -> i2cdev_result_t override
     {
+        I2CDEVLIB_LOG_D("writeReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+
         this->wire_->beginTransmission(devAddr);
 
         // Send address
@@ -102,6 +116,8 @@ class ArduinoI2CDevBus : public I2CDevBus {
     auto writeReg16(std::uint8_t devAddr, std::uint8_t regAddr, std::size_t length, const std::uint16_t* data)
       -> i2cdev_result_t override
     {
+        I2CDEVLIB_LOG_D("writeReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+
         this->wire_->beginTransmission(devAddr);
 
         // Send address
@@ -134,7 +150,7 @@ ArduinoI2CDevBus I2CDev = ArduinoI2CDevBus(&Wire);
 
 #ifdef ARDUINO_ESP32_DEV
 ArduinoI2CDevBus I2CDev1 = ArduinoI2CDevBus(&Wire1);
-#endif // ESP32
+#endif // ARDUINO_ESP32_DEV
 
 #ifndef I2CDEV_DEFAULT_BUS
 #define I2CDEV_DEFAULT_BUS I2CDev
