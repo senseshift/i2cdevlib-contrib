@@ -3,24 +3,30 @@
 
 #include "i2cdevbus.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #define PCA9685_I2CADDR_BASE (0x40)
 
-#define PCA9685_REG_MODE1 (0x00)
-#define PCA9685_REG_MODE2 (0x01)
-#define PCA9685_REG_SUBADR1 (0x02)
-#define PCA9685_REG_SUBADR2 (0x03)
-#define PCA9685_REG_SUBADR3 (0x04)
-#define PCA9685_REG_ALLCALLADR (0x05)
-#define PCA9685_REG_LED0_ON_L (0x06)
-#define PCA9685_REG_LED0_ON_H (0x07)
-#define PCA9685_REG_LED0_OFF_L (0x08)
-#define PCA9685_REG_LED0_OFF_H (0x09)
-#define PCA9685_REG_ALL_LED_ON_L (0xFA)
-#define PCA9685_REG_ALL_LED_ON_H (0xFB)
-#define PCA9685_REG_ALL_LED_OFF_L (0xFC)
-#define PCA9685_REG_ALL_LED_OFF_H (0xFD)
-#define PCA9685_REG_PRESCALE (0xFE)
-#define PCA9685_REG_TESTMODE (0xFF)
+typedef enum pca9685_reg_t {
+    PCA9685_REG_MODE1 = 0x00,
+    PCA9685_REG_MODE2 = 0x01,
+    PCA9685_REG_SUBADR1 = 0x02,
+    PCA9685_REG_SUBADR2 = 0x03,
+    PCA9685_REG_SUBADR3 = 0x04,
+    PCA9685_REG_ALLCALLADR = 0x05,
+    PCA9685_REG_LED0_ON_L = 0x06,
+    PCA9685_REG_LED0_ON_H = 0x07,
+    PCA9685_REG_LED0_OFF_L = 0x08,
+    PCA9685_REG_LED0_OFF_H = 0x09,
+    PCA9685_REG_ALL_LED_ON_L = 0xFA,
+    PCA9685_REG_ALL_LED_ON_H = 0xFB,
+    PCA9685_REG_ALL_LED_OFF_L = 0xFC,
+    PCA9685_REG_ALL_LED_OFF_H = 0xFD,
+    PCA9685_REG_PRESCALE = 0xFE,
+    PCA9685_REG_TESTMODE = 0xFF
+} pca9685_reg_t;
 
 #define PCA9685_MODE1_ALLCALL (0x01)
 #define PCA9685_MODE1_SUB3 (0x02)
@@ -47,12 +53,6 @@
 
 #define PCA9685_VALUE_MAX (4095)
 #define PCA9685_VALUE_FULL_ON (4096)
-
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-//
 
 #ifdef __cplusplus
 };
