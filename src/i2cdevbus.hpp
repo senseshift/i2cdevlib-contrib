@@ -10,6 +10,26 @@
 
 #include "i2cdevbus.h"
 
+#ifndef I2CDEVLIB_LOG_V
+# define I2CDEVLIB_LOG_V(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_D
+# define I2CDEVLIB_LOG_D(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_I
+# define I2CDEVLIB_LOG_I(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_W
+# define I2CDEVLIB_LOG_W(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_E
+# define I2CDEVLIB_LOG_E(...)
+#endif
+
 /// An abstract class that provides a generic interface for I2C communication.
 ///
 /// Provides useful functionality for reading and writing to I2C registers.
