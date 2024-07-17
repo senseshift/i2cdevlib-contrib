@@ -1,0 +1,7 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <Objective-C>
+      <option name="HEADER_GUARD_STYLE_PATTERN" value="__I2CDEVLIB_${FILE_NAME}_${EXT}__" />
+    </Objective-C>
+  </code_scheme>
+</component>
