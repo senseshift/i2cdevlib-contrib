@@ -1,6 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
-    "name": "Serial_BLE",
+    "name": "I2CDevLibContrib",
     "version": "0.1.0",
     "repository": {
         "url": "git@github.com:senseshift/i2cdevlib-contrib.git",
