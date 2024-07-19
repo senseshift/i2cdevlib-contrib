@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "author": "Leonid Meleshin",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0.6, "left": -0.6, "attrs": {} },
+    {
+      "type": "wokwi-mpu6050",
+      "id": "imu1",
+      "top": -131.42,
+      "left": 166.12,
+      "rotate": -90,
+      "attrs": {}
+    }
+  ],
+  "connections": [ [ "uno:A4.2", "imu1:SDA", "green", [ "v0" ] ], [ "uno:A5.2", "imu1:SCL", "green", [ "v0" ] ] ],
+  "dependencies": {}
+}

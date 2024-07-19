@@ -1,0 +1,6 @@
+[wokwi]
+version = 1
+firmware = "./firmware.hex"
+elf = "./firmware.elf"
+
+gdbServerPort=3333
