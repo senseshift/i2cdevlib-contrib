@@ -5,18 +5,18 @@
 #include <Wire.h>
 
 class ArduinoI2CDevBus : public I2CDevBus {
-  public:
+public:
     explicit ArduinoI2CDevBus(TwoWire* wire = &Wire) : wire_(wire) {}
 
-  private:
+private:
     TwoWire* wire_;
 
     auto readReg8(
-      std::uint8_t devAddr,
-      std::uint8_t regAddr,
-      std::size_t length,
-      std::uint8_t* data,
-      std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+            uint8_t devAddr,
+            uint8_t regAddr,
+            size_t length,
+            uint8_t* data,
+            uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t override
     {
         I2CDEVLIB_LOG_D("readReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
@@ -25,9 +25,13 @@ class ArduinoI2CDevBus : public I2CDevBus {
         this->wire_->write(regAddr);
         this->wire_->endTransmission();
 
+#if defined(ARDUINO_ARCH_AVR)
+        this->wire_->requestFrom(devAddr, static_cast<uint8_t>(length), 1);
+#else
         this->wire_->requestFrom(devAddr, length, true);
+#endif
 
-        std::uint8_t received = 0;
+        uint8_t received = 0;
         const auto start = millis();
 
         while (this->wire_->available() && (timeout == 0 || millis() - start < timeout)) {
@@ -47,11 +51,11 @@ class ArduinoI2CDevBus : public I2CDevBus {
     }
 
     auto readReg16(
-      std::uint8_t devAddr,
-      std::uint8_t regAddr,
-      std::size_t length,
-      std::uint16_t* data,
-      std::uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
+            uint8_t devAddr,
+            uint8_t regAddr,
+            size_t length,
+            uint16_t* data,
+            uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t override
     {
         I2CDEVLIB_LOG_D("readReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
@@ -60,9 +64,13 @@ class ArduinoI2CDevBus : public I2CDevBus {
         this->wire_->write(regAddr);
         this->wire_->endTransmission();
 
+#if defined(ARDUINO_ARCH_AVR)
+        this->wire_->requestFrom(devAddr, static_cast<uint8_t>(length * 2), 1);
+#else
         this->wire_->requestFrom(devAddr, length * 2, true);
+#endif
 
-        std::uint8_t received = 0;
+        uint8_t received = 0;
         const auto start = millis();
 
         while (this->wire_->available() >= 2 && (timeout == 0 || millis() - start < timeout)) {
@@ -81,8 +89,8 @@ class ArduinoI2CDevBus : public I2CDevBus {
         return I2CDEV_RESULT_OK;
     }
 
-    auto writeReg8(std::uint8_t devAddr, std::uint8_t regAddr, std::size_t length, const std::uint8_t* data)
-      -> i2cdev_result_t override
+    auto writeReg8(uint8_t devAddr, uint8_t regAddr, size_t length, const uint8_t* data)
+    -> i2cdev_result_t override
     {
         I2CDEVLIB_LOG_D("writeReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
 
@@ -105,8 +113,8 @@ class ArduinoI2CDevBus : public I2CDevBus {
         return I2CDEV_RESULT_OK;
     }
 
-    auto writeReg16(std::uint8_t devAddr, std::uint8_t regAddr, std::size_t length, const std::uint16_t* data)
-      -> i2cdev_result_t override
+    auto writeReg16(uint8_t devAddr, uint8_t regAddr, size_t length, const uint16_t* data)
+    -> i2cdev_result_t override
     {
         I2CDEVLIB_LOG_D("writeReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
 
@@ -118,14 +126,14 @@ class ArduinoI2CDevBus : public I2CDevBus {
         }
 
         // Send data
-        for (std::size_t i = 0; i < length; i++) {
+        for (size_t i = 0; i < length; i++) {
             // Send MSB
-            if (this->wire_->write(static_cast<std::uint8_t>(data[i] >> 8)) != 1) {
+            if (this->wire_->write(static_cast<uint8_t>(data[i] >> 8)) != 1) {
                 return I2CDEV_RESULT_ERROR;
             }
 
             // Send LSB
-            if (this->wire_->write(static_cast<std::uint8_t>(data[i] & 0xFF)) != 1) {
+            if (this->wire_->write(static_cast<uint8_t>(data[i] & 0xFF)) != 1) {
                 return I2CDEV_RESULT_ERROR;
             }
         }
