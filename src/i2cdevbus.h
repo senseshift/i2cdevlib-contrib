@@ -1,7 +1,11 @@
 #ifndef __I2CDEVBUS_H__
 #define __I2CDEVBUS_H__
 
+#ifdef ARDUINO
+#include "Arduino.h"
+#else // !ARDUINO
 #include "stdint.h"
+#endif // ARDUINO
 
 /// 1000ms default read timeout (modify with `I2CDevBus::DEFAULT_READ_TIMEOUT_MS = [ms];`)
 #ifndef I2CDEV_DEFAULT_READ_TIMEOUT_MS
