@@ -4,6 +4,20 @@
 #include "i2cdevbus.hpp"
 #include <Wire.h>
 
+inline __attribute__((always_inline)) void i2cdevlib_arduino_delay_us(uint32_t us) {
+    if (us > 1000) {
+        // delay in ms, then in us
+        delay(us / 1000);
+        delayMicroseconds(us % 1000);
+    } else {
+        delayMicroseconds(us);
+    }
+}
+
+#ifndef I2CDEVLIB_PLATFORM_SLEEP_US_US
+#define I2CDEVLIB_PLATFORM_SLEEP_US(us) i2cdevlib_arduino_delay_us(us)
+#endif
+
 class ArduinoI2CDevBus : public I2CDevBus {
 public:
     explicit ArduinoI2CDevBus(TwoWire* wire = &Wire) : wire_(wire) {}
