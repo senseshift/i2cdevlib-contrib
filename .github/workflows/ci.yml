@@ -26,6 +26,7 @@ jobs:
         example:
           - "examples/PCA9685/Servo/Servo.ino"
           - "examples/PCA9685/VibroPulse/VibroPulse.ino"
+          - "examples/MPU6050/BasicReadings/BasicReadings.ino"
         boards: [ [ uno, esp32dev ] ]
 
     steps:
