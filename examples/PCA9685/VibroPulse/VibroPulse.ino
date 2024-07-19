@@ -17,20 +17,17 @@ void setup() {
     Serial.begin(115200);
     Serial.println("I2CDevLib Example - PCA9685 Test");
 
-    if (!Wire.begin()) {
-        Serial.println("[E] Failed to init Wire!");
-        while(true) {};
-    }
+    Wire.begin();
 
     // auto result = pca9685.setPrescale(100);
     result = pca9685.setFrequency(PWM_FREQ);
     if (result != I2CDEV_RESULT_OK) {
-        Serial.printf("[E] Failed to set PCA9685 prescale: %i\n", result);
+        Serial.println("[E] Failed to set PCA9685 prescale");
         while(true) {};
     }
     result = pca9685.wakeup();
     if (result != I2CDEV_RESULT_OK) {
-        Serial.printf("[E] Failed wakeup PCA9685: %i\n", result);
+        Serial.println("[E] Failed wakeup PCA9685");
         while(true) {};
     }
 
@@ -46,7 +43,7 @@ void pulse(uint8_t pin) {
 uint8_t currentVibro = 0;
 
 void loop() {
-    Serial.printf("Current vibro: %i\n", currentVibro);
+    Serial.print("Current vibro: "); Serial.println(currentVibro);
 
     pulse(currentVibro);
     delay(100);
