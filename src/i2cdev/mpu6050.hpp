@@ -8,9 +8,9 @@ namespace i2cdev {
     class MPU6050 {
       public:
 #ifdef I2CDEV_DEFAULT_BUS
-        MPU6050(uint8_t addr = MPU6050_I2CADDR_BASE, I2CDevBus* bus = &I2CDEV_DEFAULT_BUS) : _addr(addr), _bus(bus) {}
+        MPU6050(uint8_t addr = MPU6050_I2CADDR_BASE, I2CDevBus& bus = I2CDEV_DEFAULT_BUS) : _addr(addr), _bus(bus) {}
 #else
-        MPU6050(uint8_t addr, I2CDevBus *bus) : _addr(addr), _bus(bus) {}
+        MPU6050(uint8_t addr, I2CDevBus& bus) : _addr(addr), _bus(bus) {}
 #endif
 
         [[nodiscard]] auto check() -> i2cdev_result_t;
@@ -52,9 +52,7 @@ namespace i2cdev {
 
       private:
         uint8_t _addr;
-        I2CDevBus* _bus;
-
-        uint8_t _buffer[14];
+        I2CDevBus& _bus;
 
         mpu6050_accel_range_t _accel_range;
         mpu6050_gyro_range_t _gyro_range;
@@ -62,15 +60,29 @@ namespace i2cdev {
 
     inline auto MPU6050::check() -> i2cdev_result_t {
         uint8_t data;
-        i2cdev_result_t result = this->_bus->readReg8(this->_addr, MPU6050_REG_WHO_AM_I, &data);
+        i2cdev_result_t result;
 
-        return (result == I2CDEV_RESULT_OK && data == MPU6050_DEVICE_ID) ? result : I2CDEV_RESULT_ERROR;
+        // wait for the device to be ready
+        for (int i = 0; i < 5; i++) {
+            result = this->_bus.readReg8(this->_addr, MPU6050_REG_WHO_AM_I, &data);
+            if (result == I2CDEV_RESULT_OK) {
+                break;
+            }
+            I2CDEVLIB_PLATFORM_SLEEP_US(10000);
+        }
+
+        if (result != I2CDEV_RESULT_OK || data != MPU6050_DEVICE_ID) {
+            I2CDEVLIB_LOG_E("Device check failure. Result: %i, ID: %i", result, data);
+            return I2CDEV_RESULT_ERROR;
+        }
+
+        return result;
     }
 
     inline auto MPU6050::reset() -> i2cdev_result_t {
         i2cdev_result_t result;
 
-        result = this->_bus->updateReg8(
+        result = this->_bus.updateReg8(
             this->_addr,
             MPU6050_REG_PWR_MGMT_1,
             MPU6050_PWR_MGMT_1_DEVICE_RESET,
@@ -80,16 +92,21 @@ namespace i2cdev {
             return result;
         }
 
-        uint8_t data = MPU6050_PWR_MGMT_1_DEVICE_RESET;
+        uint8_t data;
         do {
-            result = this->_bus->readReg8(this->_addr, MPU6050_REG_PWR_MGMT_1, &data);
+            result = this->_bus.readReg8(this->_addr, MPU6050_REG_PWR_MGMT_1, &data);
             if (result != I2CDEV_RESULT_OK) {
+                I2CDEVLIB_LOG_E("Failed to read PWR_MGMT_1 after reset");
                 return result;
             }
+
+            I2CDEVLIB_PLATFORM_SLEEP_US(1000);
         } while (data & MPU6050_PWR_MGMT_1_DEVICE_RESET);
 
+        I2CDEVLIB_PLATFORM_SLEEP_US(10000);
+
         // reset signal paths
-        result = this->_bus->updateReg8(
+        result = this->_bus.updateReg8(
             this->_addr,
             MPU6050_REG_SIGNAL_PATH_RESET,
             MPU6050_SIGNAL_PATH_RESET_GYRO_RESET | MPU6050_SIGNAL_PATH_RESET_ACCEL_RESET | MPU6050_SIGNAL_PATH_RESET_TEMP_RESET,
@@ -99,11 +116,13 @@ namespace i2cdev {
             return result;
         }
 
+        I2CDEVLIB_PLATFORM_SLEEP_US(1000);
+
         return result;
     }
 
     inline auto MPU6050::setAccelerometerRange(mpu6050_accel_range_t range) -> i2cdev_result_t {
-        auto result = this->_bus->updateReg8Bits(
+        auto result = this->_bus.updateReg8Bits(
             this->_addr,
             MPU6050_REG_ACCEL_CONFIG,
             MPU6050_ACCEL_CONFIG_AFS_SEL_SHIFT,
@@ -121,7 +140,7 @@ namespace i2cdev {
     }
 
     inline auto MPU6050::setGyroscopeRange(mpu6050_gyro_range_t range) -> i2cdev_result_t {
-        auto result = this->_bus->updateReg8Bits(
+        auto result = this->_bus.updateReg8Bits(
             this->_addr,
             MPU6050_REG_GYRO_CONFIG,
             MPU6050_GYRO_CONFIG_FS_SEL_SHIFT,
@@ -139,7 +158,7 @@ namespace i2cdev {
     }
 
     inline auto MPU6050::setFilterBandwidth(mpu6050_bandwidth_t bandwidth) -> i2cdev_result_t {
-        return this->_bus->updateReg8Bits(
+        return this->_bus.updateReg8Bits(
             this->_addr,
             MPU6050_REG_CONFIG,
             MPU6050_REG_CONFIG_DLPF_CFG_SHIFT,
@@ -190,105 +209,90 @@ namespace i2cdev {
 
     inline auto MPU6050::readRawAccelerometerMeasurements(int16_t *accelX, int16_t *accelY,
                                                           int16_t *accelZ) -> i2cdev_result_t {
-        i2cdev_result_t result = this->_bus->readReg8(
+        int16_t buffer[3];
+
+        i2cdev_result_t result = this->_bus.readReg16(
             this->_addr,
             MPU6050_REG_ACCEL_XOUT_H,
             6,
-            _buffer
+            reinterpret_cast<uint16_t*>(buffer)
         );
         if (result != I2CDEV_RESULT_OK) {
             return result;
         }
 
-        *accelX = (_buffer[0] << 8) | _buffer[1];
-        *accelY = (_buffer[2] << 8) | _buffer[3];
-        *accelZ = (_buffer[4] << 8) | _buffer[5];
+        *accelX = buffer[0];
+        *accelY = buffer[1];
+        *accelZ = buffer[2];
 
         return result;
     }
 
     inline auto MPU6050::readRawTemperatureMeasurements(int16_t *temp) -> i2cdev_result_t {
-        i2cdev_result_t result = this->_bus->readReg8(
+        i2cdev_result_t result = this->_bus.readReg16(
             this->_addr,
             MPU6050_REG_TEMP_OUT_H,
-            2,
-            _buffer
+            1,
+            reinterpret_cast<uint16_t*>(temp)
         );
         if (result != I2CDEV_RESULT_OK) {
             return result;
         }
 
-        *temp = (_buffer[0] << 8) | _buffer[1];
-
         return result;
     }
 
-    inline auto MPU6050::readRawGyroscopeMeasurements(int16_t *gyroX, int16_t *gyroY,
-                                                      int16_t *gyroZ) -> i2cdev_result_t {
-        i2cdev_result_t result = this->_bus->readReg8(
+    inline auto MPU6050::readRawGyroscopeMeasurements(int16_t *gyroX, int16_t *gyroY, int16_t *gyroZ) -> i2cdev_result_t {
+        int16_t buffer[3];
+
+        i2cdev_result_t result = this->_bus.readReg16(
             this->_addr,
             MPU6050_REG_GYRO_XOUT_H,
-            6,
-            _buffer
+            3,
+            reinterpret_cast<uint16_t*>(buffer)
         );
         if (result != I2CDEV_RESULT_OK) {
             return result;
         }
 
-        *gyroX = (_buffer[0] << 8) | _buffer[1];
-        *gyroY = (_buffer[2] << 8) | _buffer[3];
-        *gyroZ = (_buffer[4] << 8) | _buffer[5];
+        *gyroX = buffer[0];
+        *gyroY = buffer[1];
+        *gyroZ = buffer[2];
 
         return result;
     }
 
-    inline auto MPU6050::readRawMotionMeasurements(int16_t *accelX, int16_t *accelY, int16_t *accelZ, int16_t *gyroX,
-                                                   int16_t *gyroY, int16_t *gyroZ) -> i2cdev_result_t {
-        i2cdev_result_t result = this->_bus->readReg8(
-            this->_addr,
-            MPU6050_REG_ACCEL_XOUT_H,
-            14,
-            _buffer
-        );
-        if (result != I2CDEV_RESULT_OK) {
-            return result;
-        }
+    inline auto MPU6050::readRawMotionMeasurements(int16_t *accelX, int16_t *accelY, int16_t *accelZ,
+                                                   int16_t *gyroX, int16_t *gyroY, int16_t *gyroZ) -> i2cdev_result_t {
+        int16_t temp;
 
-        *accelX = (_buffer[0] << 8) | _buffer[1];
-        *accelY = (_buffer[2] << 8) | _buffer[3];
-        *accelZ = (_buffer[4] << 8) | _buffer[5];
-
-        // bytes 6 and 7 are temperature
-
-        *gyroX = (_buffer[8] << 8) | _buffer[9];
-        *gyroY = (_buffer[10] << 8) | _buffer[11];
-        *gyroZ = (_buffer[12] << 8) | _buffer[13];
-
-        return result;
+        return this->readRawAllMeasurements(accelX, accelY, accelZ, gyroX, gyroY, gyroZ, &temp);
     }
 
-    inline auto
-    MPU6050::readRawAllMeasurements(int16_t *accelX, int16_t *accelY, int16_t *accelZ, int16_t *gyroX, int16_t *gyroY,
-                                    int16_t *gyroZ, int16_t *temp) -> i2cdev_result_t {
-        i2cdev_result_t result = this->_bus->readReg8(
+    inline auto MPU6050::readRawAllMeasurements(int16_t *accelX, int16_t *accelY, int16_t *accelZ,
+                                                int16_t *gyroX, int16_t *gyroY, int16_t *gyroZ,
+                                                int16_t *temp) -> i2cdev_result_t {
+        int16_t buffer[7];
+
+        i2cdev_result_t result = this->_bus.readReg16(
             this->_addr,
             MPU6050_REG_ACCEL_XOUT_H,
-            14,
-            _buffer
+            7,
+            reinterpret_cast<uint16_t*>(buffer)
         );
         if (result != I2CDEV_RESULT_OK) {
             return result;
         }
 
-        *accelX = (_buffer[0] << 8) | _buffer[1];
-        *accelY = (_buffer[2] << 8) | _buffer[3];
-        *accelZ = (_buffer[4] << 8) | _buffer[5];
+        *accelX = buffer[0];
+        *accelY = buffer[1];
+        *accelZ = buffer[2];
 
-        *temp = (_buffer[6] << 8) | _buffer[7];
+        *temp = buffer[3];
 
-        *gyroX = (_buffer[8] << 8) | _buffer[9];
-        *gyroY = (_buffer[10] << 8) | _buffer[11];
-        *gyroZ = (_buffer[12] << 8) | _buffer[13];
+        *gyroX = buffer[4];
+        *gyroY = buffer[5];
+        *gyroZ = buffer[6];
 
         return result;
     }

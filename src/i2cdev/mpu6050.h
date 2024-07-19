@@ -13,7 +13,7 @@ extern "C" {
 
 #define MPU6050_DEVICE_ID (0x68) // Expected MPU6050_REG_WHO_AM_I value
 
-#define MPU6050_CREATE_MASK(shift, length) (((1 << (length)) - 1) << (shift))
+#define MPU6050_CREATE_MASK(shift, length) (((1U << (length)) - 1U) << (shift))
 
 typedef enum mpu6050_reg_t {
     MPU6050_REG_XG_OFFS_TC = 0x00,
