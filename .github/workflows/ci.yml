@@ -80,15 +80,20 @@ jobs:
 
       - name: Build example
         run: |
+          set -o pipefail
+          
           # for whatever reason, if we specify the build dir, it doesn't work
           # mkdir -p ${{ env.PLATFORMIO_BUILD_DIR }}
           pio ci --lib="." --board=${{ join(matrix.boards, ' --board=') }} --keep-build-dir 2>&1 | tee output.log
+          
+          if [ $? -ne 0 ]; then exit 1; fi
           
           export PLATFORMIO_BUILD_DIR=$(grep -oP 'The following files/directories have been created in \K.*' output.log)
           echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
         env:
           FORCE_COLOR: 2 # Enable color output
           PLATFORMIO_CI_SRC: "./examples/${{ matrix.example }}/*.ino"
+          PLATFORMIO_BUILD_FLAGS: "-D CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_DEBUG"
 
       - name: Upload artifacts
         if: steps.metadata.outputs.upload_artifact == 'true'
@@ -134,7 +139,7 @@ jobs:
         uses: leon0399/wokwi-ci-action@main
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          timeout: 10000
+          timeout: 60000
           path: ./examples/${{ matrix.example }}
           scenario: 'scenario.yml'
           diagram_file: 'diagram.${{ matrix.board }}.json'

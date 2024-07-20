@@ -487,15 +487,19 @@ namespace i2cdevlib {
     ///
     /// \return A string containing the hexadecimal dump of the buffer
     [[nodiscard]] auto hexdump(const uint8_t* data, const size_t length) -> char* {
-        char* result = new char[length * 3 + 1];
+        char* result = new char[length * 2 + 1];
 
         for (size_t i = 0; i < length; i++) {
-            sprintf(result + i * 3, "%02X ", data[i]);
+            sprintf(result + i * 2, "%02X", data[i]);
         }
 
-        result[length * 3] = '\0';
+        result[length * 2] = '\0';
 
         return result;
+    }
+
+    [[nodiscard]] inline auto hexdump(const uint16_t* data, const size_t length) -> char* {
+        return hexdump(reinterpret_cast<const uint8_t*>(data), length * 2);
     }
 }
 
