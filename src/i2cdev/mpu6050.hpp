@@ -68,7 +68,8 @@ namespace i2cdev {
             if (result == I2CDEV_RESULT_OK) {
                 break;
             }
-            I2CDEVLIB_PLATFORM_SLEEP_US(10000);
+
+            i2cdev_platform_sleep_us(10000);
         }
 
         if (result != I2CDEV_RESULT_OK || data != MPU6050_DEVICE_ID) {
@@ -100,10 +101,10 @@ namespace i2cdev {
                 return result;
             }
 
-            I2CDEVLIB_PLATFORM_SLEEP_US(1000);
+            i2cdev_platform_sleep_us(1000);
         } while (data & MPU6050_PWR_MGMT_1_DEVICE_RESET);
 
-        I2CDEVLIB_PLATFORM_SLEEP_US(10000);
+        i2cdev_platform_sleep_us(10000);
 
         // reset signal paths
         result = this->_bus.updateReg8(
@@ -116,7 +117,7 @@ namespace i2cdev {
             return result;
         }
 
-        I2CDEVLIB_PLATFORM_SLEEP_US(1000);
+        i2cdev_platform_sleep_us(1000);
 
         return result;
     }
