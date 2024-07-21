@@ -19,9 +19,19 @@ namespace i2cdev {
 
         [[nodiscard]] auto setAccelerometerRange(mpu6050_accel_range_t range) -> i2cdev_result_t;
 
+        auto getAccelerometerRange() -> mpu6050_accel_range_t;
+
         [[nodiscard]] auto setGyroscopeRange(mpu6050_gyro_range_t range) -> i2cdev_result_t;
 
+        auto getGyroscopeRange() -> mpu6050_gyro_range_t;
+
         [[nodiscard]] auto setFilterBandwidth(mpu6050_bandwidth_t bandwidth) -> i2cdev_result_t;
+
+        auto getFilterBandwidth() -> mpu6050_bandwidth_t;
+
+        [[nodiscard]] auto setFsyncSampleOutput(mpu6050_fsync_t fsync) -> i2cdev_result_t;
+
+        auto getFsyncSampleOutput() -> mpu6050_fsync_t;
 
         auto getAccelerometerMeasurements() -> mpu6050_3axis_data;
 
@@ -140,6 +150,20 @@ namespace i2cdev {
         return result;
     }
 
+    inline auto MPU6050::getAccelerometerRange() -> mpu6050_accel_range_t {
+        uint8_t data;
+        if (this->_bus.readReg8(this->_addr, MPU6050_REG_ACCEL_CONFIG, &data) != I2CDEV_RESULT_OK) {
+            I2CDEVLIB_LOG_E("Failed to read ACCEL_CONFIG register");
+            return this->_accel_range;
+        }
+
+        this->_accel_range = static_cast<mpu6050_accel_range_t>(
+            (data >> MPU6050_ACCEL_CONFIG_AFS_SEL_SHIFT) & MPU6050_ACCEL_CONFIG_AFS_SEL_MASK
+        );
+
+        return this->_accel_range;
+    }
+
     inline auto MPU6050::setGyroscopeRange(mpu6050_gyro_range_t range) -> i2cdev_result_t {
         auto result = this->_bus.updateReg8Bits(
             this->_addr,
@@ -158,6 +182,20 @@ namespace i2cdev {
         return result;
     }
 
+    inline auto MPU6050::getGyroscopeRange() -> mpu6050_gyro_range_t {
+        uint8_t data;
+        if (this->_bus.readReg8(this->_addr, MPU6050_REG_GYRO_CONFIG, &data) != I2CDEV_RESULT_OK) {
+            I2CDEVLIB_LOG_E("Failed to read GYRO_CONFIG register");
+            return this->_gyro_range;
+        }
+
+        this->_gyro_range = static_cast<mpu6050_gyro_range_t>(
+            (data >> MPU6050_GYRO_CONFIG_FS_SEL_SHIFT) & MPU6050_GYRO_CONFIG_FS_SEL_MASK
+        );
+
+        return this->_gyro_range;
+    }
+
     inline auto MPU6050::setFilterBandwidth(mpu6050_bandwidth_t bandwidth) -> i2cdev_result_t {
         return this->_bus.updateReg8Bits(
             this->_addr,
@@ -165,6 +203,18 @@ namespace i2cdev {
             MPU6050_REG_CONFIG_DLPF_CFG_SHIFT,
             MPU6050_REG_CONFIG_DLPF_CFG_LENGTH,
             bandwidth
+        );
+    }
+
+    inline auto MPU6050::getFilterBandwidth() -> mpu6050_bandwidth_t {
+        uint8_t data;
+        if (this->_bus.readReg8(this->_addr, MPU6050_REG_CONFIG, &data) != I2CDEV_RESULT_OK) {
+            I2CDEVLIB_LOG_E("Failed to read CONFIG register");
+            return static_cast<mpu6050_bandwidth_t>(0);
+        }
+
+        return static_cast<mpu6050_bandwidth_t>(
+            (data >> MPU6050_REG_CONFIG_DLPF_CFG_SHIFT) & MPU6050_REG_CONFIG_DLPF_CFG_MASK
         );
     }
 
