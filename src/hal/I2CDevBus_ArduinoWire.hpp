@@ -4,6 +4,16 @@
 #include "i2cdevbus.hpp"
 #include <Wire.h>
 
+inline __attribute__((always_inline)) void i2cdev_platform_sleep_us(uint32_t us) {
+    if (us > 1000) {
+        // delay in ms, then in us
+        delay(us / 1000);
+        delayMicroseconds(us % 1000);
+    } else {
+        delayMicroseconds(us);
+    }
+}
+
 class ArduinoI2CDevBus : public I2CDevBus {
 public:
     explicit ArduinoI2CDevBus(TwoWire* wire = &Wire) : wire_(wire) {}
@@ -19,7 +29,7 @@ private:
             uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t override
     {
-        I2CDEVLIB_LOG_D("readReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+        I2CDEVLIB_LOG_D("readReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
         this->wire_->beginTransmission(devAddr);
         this->wire_->write(regAddr);
@@ -58,7 +68,7 @@ private:
             uint16_t timeout = DEFAULT_READ_TIMEOUT_MS
     ) -> i2cdev_result_t override
     {
-        I2CDEVLIB_LOG_D("readReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+        I2CDEVLIB_LOG_D("readReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
         this->wire_->beginTransmission(devAddr);
         this->wire_->write(regAddr);
@@ -92,7 +102,7 @@ private:
     auto writeReg8(uint8_t devAddr, uint8_t regAddr, size_t length, const uint8_t* data)
     -> i2cdev_result_t override
     {
-        I2CDEVLIB_LOG_D("writeReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+        I2CDEVLIB_LOG_D("writeReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
         this->wire_->beginTransmission(devAddr);
 
@@ -116,7 +126,7 @@ private:
     auto writeReg16(uint8_t devAddr, uint8_t regAddr, size_t length, const uint16_t* data)
     -> i2cdev_result_t override
     {
-        I2CDEVLIB_LOG_D("writeReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length).c_str());
+        I2CDEVLIB_LOG_D("writeReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
         this->wire_->beginTransmission(devAddr);
 

@@ -32,6 +32,8 @@ typedef enum {
 typedef uint8_t i2cdev_dev_addr_t;
 typedef uint8_t i2cdev_reg_addr_t;
 
+extern void i2cdev_platform_sleep_us(uint32_t us);
+
 #ifdef __cplusplus
 };
 #endif // __cplusplus

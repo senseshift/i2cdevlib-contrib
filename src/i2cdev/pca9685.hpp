@@ -48,6 +48,7 @@ namespace i2cdev {
             );
         }
 
+        // todo: use I2CDEVLIB_PLATFORM_SLEEP_US
 #ifdef ARDUINO
         [[nodiscard]] auto restart(void (*sleepUs)(uint32_t) = &delayMicroseconds) -> i2cdev_result_t
 #else
@@ -203,6 +204,7 @@ namespace i2cdev {
 
       private:
         uint8_t _addr;
+        // todo: use reference, not pointer
         I2CDevBus* _bus;
 
         uint32_t _oscillator_freq = PCA9685_OSCILLATOR_FREQ;

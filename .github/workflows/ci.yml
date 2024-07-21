@@ -2,34 +2,51 @@ name: PlatformIO CI
 
 on:
   pull_request:
-    branches:
-      - main
-      - master
-      - develop
-    paths-ignore:
-      - "**/*.md"
+    paths:
+      - "examples/**/*"
+      - "src/**/*"
   push:
     branches:
-      - main
       - master
+      - main
       - develop
-    paths-ignore:
-      - "**/*.md"
 
 jobs:
   platformio:
     runs-on: ${{ matrix.os }}
 
+    # env:
+    # PLATFORMIO_BUILD_DIR: ./../build
+
     strategy:
       matrix:
         os: [ ubuntu-latest ]
         example:
-          - "examples/PCA9685/Servo/Servo.ino"
-          - "examples/PCA9685/VibroPulse/VibroPulse.ino"
+          - "PCA9685/Servo"
+          - "PCA9685/VibroPulse"
+          - "MPU6050/BasicReadings"
         boards: [ [ uno, esp32dev ] ]
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare metadata
+        id: metadata
+        run: |
+          # get 1st element from the example path as lowercase
+          DEVICE=$(echo "${{ matrix.example }}" | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')
+          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+
+          # check if example folder contains a wokwi.toml file
+          SHOULD_UPLOAD_ARTIFACTS=$(test -f "examples/${{ matrix.example }}/wokwi.toml" && echo "true" || echo "false")
+          echo "upload_artifact=$SHOULD_UPLOAD_ARTIFACTS" >> "$GITHUB_OUTPUT"
+          
+          ARTIFACT_NAME=$(echo "${{ matrix.example }}" | tr '/' '-')
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          
+          # mkdtemp
+          # export PLATFORMIO_BUILD_DIR=$(mktemp -d)
+          # echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -63,6 +80,67 @@ jobs:
 
       - name: Build example
         run: |
-          pio ci --lib="." --board=${{ join(matrix.boards, ' --board=') }}
+          set -o pipefail
+          
+          # for whatever reason, if we specify the build dir, it doesn't work
+          # mkdir -p ${{ env.PLATFORMIO_BUILD_DIR }}
+          pio ci --lib="." --board=${{ join(matrix.boards, ' --board=') }} --keep-build-dir 2>&1 | tee output.log
+          
+          if [ $? -ne 0 ]; then exit 1; fi
+          
+          export PLATFORMIO_BUILD_DIR=$(grep -oP 'The following files/directories have been created in \K.*' output.log)
+          echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
         env:
-          PLATFORMIO_CI_SRC: ${{ matrix.example }}
+          FORCE_COLOR: 2 # Enable color output
+          PLATFORMIO_CI_SRC: "./examples/${{ matrix.example }}/*.ino"
+          PLATFORMIO_BUILD_FLAGS: "-D CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_DEBUG"
+
+      - name: Upload artifacts
+        if: steps.metadata.outputs.upload_artifact == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-${{ steps.metadata.outputs.artifact_name }}
+          path: |
+            ${{ env.PLATFORMIO_BUILD_DIR }}/.pio/build/*/firmware.*
+          retention-days: 1
+
+  wokwi:
+    runs-on: ${{ matrix.os }}
+
+    needs: platformio
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+
+        include:
+          - example: "MPU6050/BasicReadings"
+          - board: uno
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare metadata
+        id: metadata
+        run: |
+          ARTIFACT_NAME=$(echo "${{ matrix.example }}" | tr '/' '-')
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: example-${{ steps.metadata.outputs.artifact_name }}
+          path: build
+
+      - name: Copy compiled firmware
+        run: |
+          cp -ru build/${{ matrix.board }}/* examples/${{ matrix.example }}
+
+      - name: Run simulation
+        uses: leon0399/wokwi-ci-action@main
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          timeout: 60000
+          path: ./examples/${{ matrix.example }}
+          scenario: 'scenario.yml'
+          diagram_file: 'diagram.${{ matrix.board }}.json'
+          elf: '${{ github.workspace }}/build/${{ matrix.board }}/firmware.elf'

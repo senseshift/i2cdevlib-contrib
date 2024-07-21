@@ -1,0 +1,10 @@
+name: Test MPU6050/BasicReadings
+version: 1
+author: Leonid Meleshin
+
+steps:
+  - wait-serial: "MPU6050 Found!"
+
+  - wait-serial: "Accelerometer X: 0.00 Y: 0.00 Z: 1.00"
+  - wait-serial: "Gyroscope     X: 0.00 Y: 0.00 Z: 0.00"
+  - wait-serial: "Temperature:     24.00 C"
