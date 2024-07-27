@@ -12,16 +12,16 @@ namespace i2cdev {
     class PCA9685 {
       public:
 #ifdef I2CDEV_DEFAULT_BUS
-        PCA9685(uint8_t addr = PCA9685_I2CADDR_BASE, I2CDevBus* bus = &I2CDEV_DEFAULT_BUS) : _addr(addr), _bus(bus) {}
+        PCA9685(uint8_t addr = PCA9685_I2CADDR_BASE, I2CDevBus& bus = I2CDEV_DEFAULT_BUS) : _addr(addr), _bus(bus) {}
 #else
-        PCA9685(uint8_t addr, I2CDevBus* bus) : _addr(addr), _bus(bus) {}
+        PCA9685(uint8_t addr, I2CDevBus& bus) : _addr(addr), _bus(bus) {}
 #endif
 
         inline void setOscillatorFrequency(uint32_t freq) { this->_oscillator_freq = freq; }
 
         [[nodiscard]] inline auto reset() -> i2cdev_result_t
         {
-            return this->_bus->writeReg8(
+            return this->_bus.writeReg8(
                 this->_addr,
                 PCA9685_REG_MODE1,
                 static_cast<uint8_t>(PCA9685_MODE1_RESTART)
@@ -30,7 +30,7 @@ namespace i2cdev {
 
         [[nodiscard]] inline auto sleep() -> i2cdev_result_t
         {
-            return this->_bus->updateReg16(
+            return this->_bus.updateReg16(
                 this->_addr,
                 PCA9685_REG_MODE1,
                 PCA9685_MODE1_SLEEP,
@@ -40,7 +40,7 @@ namespace i2cdev {
 
         [[nodiscard]] inline auto wakeup() -> i2cdev_result_t
         {
-            return this->_bus->updateReg16(
+            return this->_bus.updateReg16(
                 this->_addr,
                 PCA9685_REG_MODE1,
                 PCA9685_MODE1_SLEEP,
@@ -48,16 +48,11 @@ namespace i2cdev {
             );
         }
 
-        // todo: use I2CDEVLIB_PLATFORM_SLEEP_US
-#ifdef ARDUINO
-        [[nodiscard]] auto restart(void (*sleepUs)(uint32_t) = &delayMicroseconds) -> i2cdev_result_t
-#else
-        [[nodiscard]] auto restart(void (*sleepUs)(uint32_t)) -> i2cdev_result_t
-#endif
+        [[nodiscard]] auto restart() -> i2cdev_result_t
         {
             uint8_t mode1;
 
-            auto result = this->_bus->readReg8(this->_addr, PCA9685_REG_MODE1, &mode1);
+            auto result = this->_bus.readReg8(this->_addr, PCA9685_REG_MODE1, &mode1);
             if (result != I2CDEV_RESULT_OK) {
                 return result;
             }
@@ -72,7 +67,7 @@ namespace i2cdev {
                 return result;
             }
 
-            sleepUs(500);
+            i2cdev_platform_sleep_us(500);
 
             result = this->reset();
 
@@ -99,7 +94,7 @@ namespace i2cdev {
             }
 
             uint8_t mode1;
-            auto result = this->_bus->readReg8(this->_addr, PCA9685_REG_MODE1, &mode1);
+            auto result = this->_bus.readReg8(this->_addr, PCA9685_REG_MODE1, &mode1);
             if (result != I2CDEV_RESULT_OK) {
                 return result;
             }
@@ -109,12 +104,12 @@ namespace i2cdev {
                 mode1 |= PCA9685_MODE1_EXTCLK;
             }
 
-            result = this->_bus->writeReg8(this->_addr, PCA9685_REG_MODE1, mode1);
+            result = this->_bus.writeReg8(this->_addr, PCA9685_REG_MODE1, mode1);
             if (result != I2CDEV_RESULT_OK) {
                 return result;
             }
 
-            result = this->_bus->writeReg8(this->_addr, PCA9685_REG_PRESCALE, prescale);
+            result = this->_bus.writeReg8(this->_addr, PCA9685_REG_PRESCALE, prescale);
             if (result != I2CDEV_RESULT_OK) {
                 return result;
             }
@@ -123,13 +118,13 @@ namespace i2cdev {
 
             mode1 = (mode1 & ~PCA9685_MODE1_SLEEP) | PCA9685_MODE1_RESTART | PCA9685_MODE1_AI;
 
-            return this->_bus->writeReg8(this->_addr, PCA9685_REG_MODE1, mode1);
+            return this->_bus.writeReg8(this->_addr, PCA9685_REG_MODE1, mode1);
         }
 
         [[nodiscard]] auto readPrescale() -> i2cdev_result_t
         {
             uint8_t prescale;
-            auto result = this->_bus->readReg8(this->_addr, PCA9685_REG_PRESCALE, &prescale);
+            auto result = this->_bus.readReg8(this->_addr, PCA9685_REG_PRESCALE, &prescale);
             if (result != I2CDEV_RESULT_OK) {
                 return result;
             }
@@ -153,7 +148,7 @@ namespace i2cdev {
                 static_cast<uint8_t>(off_value >> 8)
             };
 
-            return this->_bus->writeReg8(
+            return this->_bus.writeReg8(
                 this->_addr,
                 PCA9685_REG_LED0_ON_L + (led * 4),
                 4,
@@ -204,8 +199,7 @@ namespace i2cdev {
 
       private:
         uint8_t _addr;
-        // todo: use reference, not pointer
-        I2CDevBus* _bus;
+        I2CDevBus& _bus;
 
         uint32_t _oscillator_freq = PCA9685_OSCILLATOR_FREQ;
         uint8_t _prescale;

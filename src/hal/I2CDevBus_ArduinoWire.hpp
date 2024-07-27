@@ -16,10 +16,10 @@ inline __attribute__((always_inline)) void i2cdev_platform_sleep_us(uint32_t us)
 
 class ArduinoI2CDevBus : public I2CDevBus {
 public:
-    explicit ArduinoI2CDevBus(TwoWire* wire = &Wire) : wire_(wire) {}
+    explicit ArduinoI2CDevBus(TwoWire& wire = Wire) : wire_(wire) {}
 
 private:
-    TwoWire* wire_;
+    TwoWire& wire_;
 
     auto readReg8(
             uint8_t devAddr,
@@ -31,21 +31,21 @@ private:
     {
         I2CDEVLIB_LOG_D("readReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
-        this->wire_->beginTransmission(devAddr);
-        this->wire_->write(regAddr);
-        this->wire_->endTransmission();
+        this->wire_.beginTransmission(devAddr);
+        this->wire_.write(regAddr);
+        this->wire_.endTransmission();
 
 #if defined(ARDUINO_ARCH_AVR)
-        this->wire_->requestFrom(devAddr, static_cast<uint8_t>(length), 1);
+        this->wire_.requestFrom(devAddr, static_cast<uint8_t>(length), 1);
 #else
-        this->wire_->requestFrom(devAddr, length, true);
+        this->wire_.requestFrom(devAddr, length, true);
 #endif
 
         uint8_t received = 0;
         const auto start = millis();
 
-        while (this->wire_->available() && (timeout == 0 || millis() - start < timeout)) {
-            data[received++] = this->wire_->read();
+        while (this->wire_.available() && (timeout == 0 || millis() - start < timeout)) {
+            data[received++] = this->wire_.read();
 
             // Return if we have received all the bytes we need
             if (received == length) {
@@ -70,21 +70,21 @@ private:
     {
         I2CDEVLIB_LOG_D("readReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
-        this->wire_->beginTransmission(devAddr);
-        this->wire_->write(regAddr);
-        this->wire_->endTransmission();
+        this->wire_.beginTransmission(devAddr);
+        this->wire_.write(regAddr);
+        this->wire_.endTransmission();
 
 #if defined(ARDUINO_ARCH_AVR)
-        this->wire_->requestFrom(devAddr, static_cast<uint8_t>(length * 2), 1);
+        this->wire_.requestFrom(devAddr, static_cast<uint8_t>(length * 2), 1);
 #else
-        this->wire_->requestFrom(devAddr, length * 2, true);
+        this->wire_.requestFrom(devAddr, length * 2, true);
 #endif
 
         uint8_t received = 0;
         const auto start = millis();
 
-        while (this->wire_->available() >= 2 && (timeout == 0 || millis() - start < timeout)) {
-            data[received++] = this->wire_->read() << 8 | this->wire_->read();
+        while (this->wire_.available() >= 2 && (timeout == 0 || millis() - start < timeout)) {
+            data[received++] = this->wire_.read() << 8 | this->wire_.read();
 
             // Return if we have received all the bytes we need
             if (received == length * 2) {
@@ -104,19 +104,19 @@ private:
     {
         I2CDEVLIB_LOG_D("writeReg8: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
-        this->wire_->beginTransmission(devAddr);
+        this->wire_.beginTransmission(devAddr);
 
         // Send address
-        if (this->wire_->write(regAddr) != 1) {
+        if (this->wire_.write(regAddr) != 1) {
             return I2CDEV_RESULT_ERROR;
         }
 
         // Send data
-        if (this->wire_->write(data, length) != length) {
+        if (this->wire_.write(data, length) != length) {
             return I2CDEV_RESULT_ERROR;
         }
 
-        if (this->wire_->endTransmission() != 0) {
+        if (this->wire_.endTransmission() != 0) {
             return I2CDEV_RESULT_ERROR;
         }
 
@@ -128,27 +128,27 @@ private:
     {
         I2CDEVLIB_LOG_D("writeReg16: devAddr=0x%02X, regAddr=0x%02X, data=%s", devAddr, regAddr, i2cdevlib::hexdump(data, length));
 
-        this->wire_->beginTransmission(devAddr);
+        this->wire_.beginTransmission(devAddr);
 
         // Send address
-        if (this->wire_->write(regAddr) != 1) {
+        if (this->wire_.write(regAddr) != 1) {
             return I2CDEV_RESULT_ERROR;
         }
 
         // Send data
         for (size_t i = 0; i < length; i++) {
             // Send MSB
-            if (this->wire_->write(static_cast<uint8_t>(data[i] >> 8)) != 1) {
+            if (this->wire_.write(static_cast<uint8_t>(data[i] >> 8)) != 1) {
                 return I2CDEV_RESULT_ERROR;
             }
 
             // Send LSB
-            if (this->wire_->write(static_cast<uint8_t>(data[i] & 0xFF)) != 1) {
+            if (this->wire_.write(static_cast<uint8_t>(data[i] & 0xFF)) != 1) {
                 return I2CDEV_RESULT_ERROR;
             }
         }
 
-        if (this->wire_->endTransmission() != 0) {
+        if (this->wire_.endTransmission() != 0) {
             return I2CDEV_RESULT_ERROR;
         }
 
@@ -156,10 +156,10 @@ private:
     }
 };
 
-ArduinoI2CDevBus I2CDev = ArduinoI2CDevBus(&Wire);
+ArduinoI2CDevBus I2CDev = ArduinoI2CDevBus(Wire);
 
 #ifdef ARDUINO_ESP32_DEV
-ArduinoI2CDevBus I2CDev1 = ArduinoI2CDevBus(&Wire1);
+ArduinoI2CDevBus I2CDev1 = ArduinoI2CDevBus(Wire1);
 #endif // ARDUINO_ESP32_DEV
 
 #ifndef I2CDEV_DEFAULT_BUS

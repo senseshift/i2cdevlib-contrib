@@ -15,7 +15,7 @@ using namespace i2cdev;
 
 PCA9685 pca9685 = PCA9685();
 // PCA9685 pca9685 = PCA9685(0x41);
-// PCA9685 pca9685 = PCA9685(0x40, new ArduinoI2CDevBus(&Wire));
+// PCA9685 pca9685 = PCA9685(0x40, ArduinoI2CDevBus(Wire));
 
 i2cdev_result_t result;
 
