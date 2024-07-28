@@ -25,6 +25,7 @@ jobs:
           - "PCA9685/Servo"
           - "PCA9685/VibroPulse"
           - "MPU6050/BasicReadings"
+          - "MAX170XX/Simple"
         boards: [ [ uno, esp32dev ] ]
 
     steps:
@@ -79,14 +80,11 @@ jobs:
           pio pkg update --global
 
       - name: Build example
+        shell: bash
         run: |
-          set -o pipefail
-          
           # for whatever reason, if we specify the build dir, it doesn't work
           # mkdir -p ${{ env.PLATFORMIO_BUILD_DIR }}
           pio ci --lib="." --board=${{ join(matrix.boards, ' --board=') }} --keep-build-dir 2>&1 | tee output.log
-          
-          if [ $? -ne 0 ]; then exit 1; fi
           
           export PLATFORMIO_BUILD_DIR=$(grep -oP 'The following files/directories have been created in \K.*' output.log)
           echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
