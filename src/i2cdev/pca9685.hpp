@@ -90,7 +90,7 @@ namespace i2cdev {
             // Don't check if larger than PCA9685_PRESCALE_MAX (255), since it's an uint8_t
             if (prescale < PCA9685_PRESCALE_MIN) {
                 I2CDEVLIB_LOG_E("Prescale value out of range: %i; must be between 3 and 255", prescale);
-                return I2CDEV_RESULT_ERROR;
+                return I2CDEV_RESULT_EINVAL;
             }
 
             uint8_t mode1;
@@ -138,7 +138,7 @@ namespace i2cdev {
         {
             if (led > 15) {
                 I2CDEVLIB_LOG_E("LED index out of range: %i; must be between 0 and 15", led);
-                return I2CDEV_RESULT_ERROR;
+                return I2CDEV_RESULT_EINVAL;
             }
 
             uint8_t data[4] = {

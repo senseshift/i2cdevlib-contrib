@@ -36,7 +36,7 @@ private:
         this->wire_.endTransmission();
 
 #if defined(ARDUINO_ARCH_AVR)
-        this->wire_.requestFrom(devAddr, static_cast<uint8_t>(length), 1);
+        this->wire_.requestFrom(devAddr, length, static_cast<uint8_t>(1));
 #else
         this->wire_.requestFrom(devAddr, length, true);
 #endif
@@ -54,7 +54,7 @@ private:
         }
 
         if (timeout > 0 && millis() - start >= timeout && received < length) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         return I2CDEV_RESULT_OK;
@@ -75,7 +75,7 @@ private:
         this->wire_.endTransmission();
 
 #if defined(ARDUINO_ARCH_AVR)
-        this->wire_.requestFrom(devAddr, static_cast<uint8_t>(length * 2), 1);
+        this->wire_.requestFrom(devAddr, length * 2, static_cast<uint8_t>(1));
 #else
         this->wire_.requestFrom(devAddr, length * 2, true);
 #endif
@@ -93,7 +93,7 @@ private:
         }
 
         if (timeout > 0 && millis() - start >= timeout && received < length * 2) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         return I2CDEV_RESULT_OK;
@@ -108,16 +108,16 @@ private:
 
         // Send address
         if (this->wire_.write(regAddr) != 1) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         // Send data
         if (this->wire_.write(data, length) != length) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         if (this->wire_.endTransmission() != 0) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         return I2CDEV_RESULT_OK;
@@ -132,24 +132,24 @@ private:
 
         // Send address
         if (this->wire_.write(regAddr) != 1) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         // Send data
         for (size_t i = 0; i < length; i++) {
             // Send MSB
             if (this->wire_.write(static_cast<uint8_t>(data[i] >> 8)) != 1) {
-                return I2CDEV_RESULT_ERROR;
+                return I2CDEV_RESULT_EIO;
             }
 
             // Send LSB
             if (this->wire_.write(static_cast<uint8_t>(data[i] & 0xFF)) != 1) {
-                return I2CDEV_RESULT_ERROR;
+                return I2CDEV_RESULT_EIO;
             }
         }
 
         if (this->wire_.endTransmission() != 0) {
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         return I2CDEV_RESULT_OK;

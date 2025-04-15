@@ -84,7 +84,7 @@ namespace i2cdev {
 
         if (result != I2CDEV_RESULT_OK || data != MPU6050_DEVICE_ID) {
             I2CDEVLIB_LOG_E("Device check failure. Result: %i, ID: %i", result, data);
-            return I2CDEV_RESULT_ERROR;
+            return I2CDEV_RESULT_EIO;
         }
 
         return result;
