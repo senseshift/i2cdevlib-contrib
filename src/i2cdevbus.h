@@ -47,6 +47,16 @@ typedef enum i2cdev_result {
     I2CDEV_RESULT_ENOSYS = 88,
 
     /**
+     * @brief Connection timed out.
+     */
+    I2CDEV_RESULT_ETIMEDOUT = 116,
+
+    /**
+     * @brief Unsupported value.
+     */
+    I2CDEV_RESULT_ENOTSUP = 134,
+
+    /**
      * @brief Operation would block.
      */
     I2CDEV_RESULT_EWOULDBBLOCK = I2CDEV_RESULT_EAGAIN,
@@ -97,7 +107,7 @@ typedef struct i2cdev_msg {
     /**
      * Flags for this message
      */
-    const uint8_t flags;
+    mutable uint8_t flags;
 } i2cdev_msg_t;
 
 typedef struct i2cdev_driver_api i2cdev_driver_api_t;
