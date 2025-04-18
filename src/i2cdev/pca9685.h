@@ -87,6 +87,10 @@ typedef struct pca9685_dev {
     i2cdev_delay_api_t *delay;
 } pca9685_dev_t;
 
+inline int pca9685_reset(pca9685_dev_t *dev) {
+    return i2cdev_reg_write_u8(dev->i2cdev, dev->addr, PCA9685_REG_MODE1, PCA9685_MODE1_RESTART);
+}
+
 inline int pca9685_set_sleep_enabled(pca9685_dev_t *dev, bool enabled) {
     return i2cdev_reg_write_bit(dev->i2cdev, dev->addr, PCA9685_REG_MODE1,
                                 PCA9685_MODE1_SLEEP_SHIFT, enabled);
@@ -159,12 +163,12 @@ inline int pca9685_read_prescale(pca9685_dev_t *dev, uint8_t *prescale) {
     return i2cdev_reg_read_u8(dev->i2cdev, dev->addr, PCA9685_REG_PRESCALE, prescale);
 }
 
-inline int pca9685_set_frequency(pca9685_dev_t *dev, float freq, float oscillator_freq = PCA9685_OSCILLATOR_FREQ) {
+inline int pca9685_set_frequency(pca9685_dev_t *dev, float freq, uint32_t oscillator_freq = PCA9685_OSCILLATOR_FREQ) {
     // Clamp frequency
     freq = (freq > PCA9685_FREQ_MAX) ? PCA9685_FREQ_MAX : (freq < PCA9685_FREQ_MIN) ? PCA9685_FREQ_MIN : freq;
 
     // Datasheet 7.3.5
-    const auto prescale = static_cast<uint8_t>(roundf(oscillator_freq / (4096.0 * freq)) - 1);
+    const auto prescale = static_cast<uint8_t>(roundf((float) oscillator_freq / (4096.0 * freq)) - 1);
 
     return pca9685_set_prescale(dev, prescale);
 }
