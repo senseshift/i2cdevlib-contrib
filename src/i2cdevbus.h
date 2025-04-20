@@ -15,7 +15,8 @@ typedef uint8_t i2cdev_reg_addr_t;
  * @note We are using the same values as the Linux kernel for error codes.
  * @todo Include and re-use definitions from errno.h.
  */
-typedef enum i2cdev_result {
+typedef enum i2cdev_result
+{
     /**
      * @brief No error.
      */
@@ -66,7 +67,8 @@ typedef enum i2cdev_result {
  * @brief I2C message flags.
  * @see i2cdev_msg
  */
-typedef enum i2cdev_msg_flags {
+typedef enum i2cdev_msg_flags
+{
     /**
      * Write message to I2C bus.
      */
@@ -93,11 +95,12 @@ typedef enum i2cdev_msg_flags {
 /**
  * @brief Single I2C message.
  */
-typedef struct i2cdev_msg {
+typedef struct i2cdev_msg
+{
     /**
      * Data buffer in bytes
      */
-    uint8_t *buf;
+    uint8_t* buf;
 
     /**
      * Length of buffer in bytes
@@ -112,21 +115,24 @@ typedef struct i2cdev_msg {
 
 typedef struct i2cdev_driver_api i2cdev_driver_api_t;
 
-typedef struct i2cdev_bus {
-    const i2cdev_driver_api_t *api;
-    void *context;
+typedef struct i2cdev_bus
+{
+    const i2cdev_driver_api_t* api;
+    void* context;
 } i2cdev_bus_t;
 
-typedef int (*i2cdev_api_transfer_t)(const i2cdev_bus_t *bus,
-                                     const i2cdev_msg_t *msgs,
+typedef int (*i2cdev_api_transfer_t)(const i2cdev_bus_t* bus,
+                                     const i2cdev_msg_t* msgs,
                                      size_t num_msgs,
                                      i2cdev_dev_addr_t addr);
 
-typedef struct i2cdev_driver_api {
+typedef struct i2cdev_driver_api
+{
     i2cdev_api_transfer_t transfer;
 } i2cdev_driver_api_t;
 
-typedef struct i2cdev_delay_api {
+typedef struct i2cdev_delay_api
+{
     void (*delay_ns)(uint32_t ns);
 
     void (*delay_us)(uint32_t us);
@@ -147,15 +153,18 @@ typedef struct i2cdev_delay_api {
  * @retval -I2CDEV_RESULT_ENOSYS If the transfer function is not implemented.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_transfer(const i2cdev_bus_t *bus,
-                           const i2cdev_msg_t *msgs,
+static int i2cdev_transfer(const i2cdev_bus_t* bus,
+                           const i2cdev_msg_t* msgs,
                            const size_t num_msgs,
-                           const i2cdev_dev_addr_t addr) {
-    if (!num_msgs) {
+                           const i2cdev_dev_addr_t addr)
+{
+    if (!num_msgs)
+    {
         return I2CDEV_RESULT_OK;
     }
 
-    if (!bus || !bus->api || !bus->api->transfer) {
+    if (!bus || !bus->api || !bus->api->transfer)
+    {
         return -I2CDEV_RESULT_ENOSYS;
     }
 
@@ -173,12 +182,13 @@ static int i2cdev_transfer(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_write(const i2cdev_bus_t *bus,
-                        const uint8_t *buf,
+static int i2cdev_write(const i2cdev_bus_t* bus,
+                        const uint8_t* buf,
                         size_t num_bytes,
-                        i2cdev_dev_addr_t addr) {
+                        i2cdev_dev_addr_t addr)
+{
     i2cdev_msg_t msg = {
-        .buf = (uint8_t *) buf,
+        .buf = (uint8_t*)buf,
         .len = num_bytes,
         .flags = I2CDEV_MSG_WRITE | I2CDEV_MSG_STOP,
     };
@@ -197,10 +207,11 @@ static int i2cdev_write(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_read(const i2cdev_bus_t *bus,
-                       uint8_t *buf,
+static int i2cdev_read(const i2cdev_bus_t* bus,
+                       uint8_t* buf,
                        size_t num_bytes,
-                       i2cdev_dev_addr_t addr) {
+                       i2cdev_dev_addr_t addr)
+{
     struct i2cdev_msg msg = {
         .buf = buf,
         .len = num_bytes,
@@ -226,20 +237,21 @@ static int i2cdev_read(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_write_read(const i2cdev_bus_t *bus,
+static int i2cdev_write_read(const i2cdev_bus_t* bus,
                              i2cdev_dev_addr_t addr,
-                             const uint8_t *write_buf,
+                             const uint8_t* write_buf,
                              size_t num_write,
-                             uint8_t *read_buf,
-                             size_t num_read) {
+                             uint8_t* read_buf,
+                             size_t num_read)
+{
     struct i2cdev_msg msgs[2] = {
         {
-            .buf = (uint8_t *) write_buf,
+            .buf = (uint8_t*)write_buf,
             .len = num_write,
             .flags = I2CDEV_MSG_WRITE,
         },
         {
-            .buf = (uint8_t *) read_buf,
+            .buf = (uint8_t*)read_buf,
             .len = num_read,
             .flags = I2CDEV_MSG_RESTART | I2CDEV_MSG_READ | I2CDEV_MSG_STOP,
         },
@@ -249,25 +261,97 @@ static int i2cdev_write_read(const i2cdev_bus_t *bus,
 }
 
 /**
- * @brief Read a single register from an I2C device.
+ * @brief Read a registers from an I2C device.
  *
  * @param [in] bus Pointer to the bus structure for an I2C controller.
  * @param [in] addr Address of the I2C target device.
  * @param [in] reg Register address to read.
- * @param [out] val Pointer to the buffer to store the read value.
+ * @param [out] buf Pointer to the buffer to store the read value.
+ * @param [in] num_bytes Number of bytes to read. Defaults to 1.
  *
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_reg_read_u8(const i2cdev_bus_t *bus,
-                              i2cdev_dev_addr_t addr,
-                              i2cdev_reg_addr_t reg,
-                              uint8_t *val) {
-    return i2cdev_write_read(bus, addr, &reg, 1, val, 1);
+static int i2cdev_reg_burst_read_u8(const i2cdev_bus_t* bus,
+                                    i2cdev_dev_addr_t addr,
+                                    i2cdev_reg_addr_t reg,
+                                    uint8_t* buf,
+                                    size_t num_bytes = 1)
+{
+    return i2cdev_write_read(bus, addr, (const uint8_t*)&reg, 1, buf, num_bytes);
 }
 
 /**
- * @brief Write a single register to an I2C device.
+ * @brief Read a single register from an I2C device.
+ *
+ * This is equivalent to calling the following code:
+ *
+ * <pre>
+ * i2cdev_reg_burst_read_u8(bus, addr, reg, &val, 1);
+ * </pre>
+ *
+ * @see i2cdev_reg_burst_read_u8()
+ *
+ * @param [in] bus Pointer to the bus structure for an I2C controller.
+ * @param [in] addr Address of the I2C target device.
+ * @param [in] reg Register address to read.
+ * @param [out] buf Pointer to store the read value.
+ *
+ * @retval I2CDEV_RESULT_OK If successful.
+ * @retval negative Error code if an error occurred.
+ */
+static int i2cdev_reg_read_u8(const i2cdev_bus_t* bus,
+                              i2cdev_dev_addr_t addr,
+                              i2cdev_reg_addr_t reg,
+                              uint8_t* buf)
+{
+    return i2cdev_reg_burst_read_u8(bus, addr, reg, buf, 1);
+}
+
+/**
+ * @brief Write registers to an I2C device.
+ *
+ * @param [in] bus Pointer to the bus structure for an I2C controller.
+ * @param [in] addr Address of the I2C target device.
+ * @param [in] reg Register address to write.
+ * @param [in] buf Value to write to the register.
+ * @param [in] len Number of bytes to write. Defaults to 1.
+ *
+ * @retval I2CDEV_RESULT_OK If successful.
+ * @retval negative Error code if an error occurred.
+ */
+static int i2cdev_reg_burst_write_u8(const i2cdev_bus_t* bus,
+                                     i2cdev_dev_addr_t addr,
+                                     i2cdev_reg_addr_t reg,
+                                     const uint8_t* buf,
+                                     const size_t len = 1)
+{
+    i2cdev_msg_t msgs[2] = {
+        {
+            .buf = (uint8_t*)&reg,
+            .len = 1,
+            .flags = I2CDEV_MSG_WRITE
+        },
+        {
+            .buf = (uint8_t*)buf,
+            .len = len,
+            .flags = I2CDEV_MSG_WRITE | I2CDEV_MSG_STOP
+        }
+    };
+
+    return i2cdev_transfer(bus, msgs, 2, addr);
+}
+
+/**
+ * @brief Write a single register in an I2C device.
+ *
+ * Equivalent of calling the following code:
+ *
+ * <pre>
+ * i2cdev_reg_burst_write_u8(bus, addr, reg, &val, 1);
+ * </pre>
+ *
+ * @see i2cdev_reg_burst_write_u8()
  *
  * @param [in] bus Pointer to the bus structure for an I2C controller.
  * @param [in] addr Address of the I2C target device.
@@ -277,14 +361,14 @@ static int i2cdev_reg_read_u8(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_reg_write_u8(const i2cdev_bus_t *bus,
+static int i2cdev_reg_write_u8(const i2cdev_bus_t* bus,
                                i2cdev_dev_addr_t addr,
                                i2cdev_reg_addr_t reg,
-                               uint8_t val) {
-    uint8_t buf[2] = {reg, val};
-
-    return i2cdev_write(bus, buf, 2, addr);
+                               const uint8_t val)
+{
+    return i2cdev_reg_burst_write_u8(bus, addr, reg, &val, 1);
 }
+
 
 /**
  * @brief Update a single register in an I2C device.
@@ -301,20 +385,23 @@ static int i2cdev_reg_write_u8(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_reg_update_u8(const i2cdev_bus_t *bus,
+static int i2cdev_reg_update_u8(const i2cdev_bus_t* bus,
                                 i2cdev_dev_addr_t addr,
                                 i2cdev_reg_addr_t reg,
                                 uint8_t mask,
-                                uint8_t val) {
+                                uint8_t val)
+{
     uint8_t tmp;
 
     int ret = i2cdev_reg_read_u8(bus, addr, reg, &tmp);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
     tmp = (tmp & ~mask) | (val & mask);
-    if ((tmp & mask) == (val & mask)) {
+    if ((tmp & mask) == (val & mask))
+    {
         return I2CDEV_RESULT_OK;
     }
 
@@ -333,15 +420,17 @@ static int i2cdev_reg_update_u8(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_reg_read_bit(const i2cdev_bus_t *bus,
+static int i2cdev_reg_read_bit(const i2cdev_bus_t* bus,
                                i2cdev_dev_addr_t addr,
                                i2cdev_reg_addr_t reg,
                                const uint8_t bit,
-                               bool *set) {
+                               bool* set)
+{
     uint8_t tmp;
 
     int ret = i2cdev_reg_read_u8(bus, addr, reg, &tmp);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
@@ -362,11 +451,12 @@ static int i2cdev_reg_read_bit(const i2cdev_bus_t *bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_reg_write_bit(const struct i2cdev_bus *bus,
+static int i2cdev_reg_write_bit(const i2cdev_bus* bus,
                                 i2cdev_dev_addr_t addr,
                                 i2cdev_reg_addr_t reg,
                                 const uint8_t bit,
-                                const bool set) {
+                                const bool set)
+{
     return i2cdev_reg_update_u8(bus, addr, reg,
                                 (1 << bit),
                                 set ? (1 << bit) : 0);
