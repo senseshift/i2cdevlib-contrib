@@ -5,6 +5,7 @@ on:
     paths:
       - "examples/**/*"
       - "src/**/*"
+      - ".github/workflows/**/*"
   push:
     branches:
       - master
