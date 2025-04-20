@@ -19,6 +19,7 @@ jobs:
     # PLATFORMIO_BUILD_DIR: ./../build
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
         example:
