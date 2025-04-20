@@ -5,6 +5,7 @@ on:
     paths:
       - "examples/**/*"
       - "src/**/*"
+      - ".github/workflows/**/*"
   push:
     branches:
       - master
@@ -19,6 +20,7 @@ jobs:
     # PLATFORMIO_BUILD_DIR: ./../build
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
         example:
@@ -134,7 +136,7 @@ jobs:
           cp -ru build/${{ matrix.board }}/* examples/${{ matrix.example }}
 
       - name: Run simulation
-        uses: leon0399/wokwi-ci-action@main
+        uses: wokwi/wokwi-ci-action@v1.2.0
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
           timeout: 60000
