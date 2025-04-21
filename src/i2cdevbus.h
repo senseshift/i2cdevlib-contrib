@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,37 +26,37 @@ typedef enum i2cdev_result
     /**
      * @brief I/O error.
      */
-    I2CDEV_RESULT_EIO = 5,
+    I2CDEV_RESULT_EIO = -5,
 
     /**
      * @brief No more contexts.
      */
-    I2CDEV_RESULT_EAGAIN = 11,
+    I2CDEV_RESULT_EAGAIN = -11,
 
     /**
      * @brief No such device.
      */
-    I2CDEV_RESULT_ENODEV = 19,
+    I2CDEV_RESULT_ENODEV = -19,
 
     /**
      * @brief Invalid argument.
      */
-    I2CDEV_RESULT_EINVAL = 22,
+    I2CDEV_RESULT_EINVAL = -22,
 
     /**
      * @brief Function not implemented.
      */
-    I2CDEV_RESULT_ENOSYS = 88,
+    I2CDEV_RESULT_ENOSYS = -88,
 
     /**
      * @brief Connection timed out.
      */
-    I2CDEV_RESULT_ETIMEDOUT = 116,
+    I2CDEV_RESULT_ETIMEDOUT = -116,
 
     /**
      * @brief Unsupported value.
      */
-    I2CDEV_RESULT_ENOTSUP = 134,
+    I2CDEV_RESULT_ENOTSUP = -134,
 
     /**
      * @brief Operation would block.
@@ -110,7 +111,7 @@ typedef struct i2cdev_msg
     /**
      * Flags for this message
      */
-    mutable uint8_t flags;
+    uint8_t flags;
 } i2cdev_msg_t;
 
 typedef struct i2cdev_driver_api i2cdev_driver_api_t;
@@ -165,7 +166,7 @@ static int i2cdev_transfer(const i2cdev_bus_t* bus,
 
     if (!bus || !bus->api || !bus->api->transfer)
     {
-        return -I2CDEV_RESULT_ENOSYS;
+        return I2CDEV_RESULT_ENOSYS;
     }
 
     return bus->api->transfer(bus, msgs, num_msgs, addr);
@@ -212,7 +213,7 @@ static int i2cdev_read(const i2cdev_bus_t* bus,
                        size_t num_bytes,
                        i2cdev_dev_addr_t addr)
 {
-    struct i2cdev_msg msg = {
+    i2cdev_msg msg = {
         .buf = buf,
         .len = num_bytes,
         .flags = I2CDEV_MSG_READ | I2CDEV_MSG_STOP,
@@ -244,7 +245,7 @@ static int i2cdev_write_read(const i2cdev_bus_t* bus,
                              uint8_t* read_buf,
                              size_t num_read)
 {
-    struct i2cdev_msg msgs[2] = {
+    i2cdev_msg msgs[2] = {
         {
             .buf = (uint8_t*)write_buf,
             .len = num_write,
@@ -451,7 +452,7 @@ static int i2cdev_reg_read_bit(const i2cdev_bus_t* bus,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-static int i2cdev_reg_write_bit(const i2cdev_bus* bus,
+static int i2cdev_reg_write_bit(const i2cdev_bus_t* bus,
                                 i2cdev_dev_addr_t addr,
                                 i2cdev_reg_addr_t reg,
                                 const uint8_t bit,
