@@ -17,33 +17,33 @@ extern "C" {
 
 typedef enum mpu6050_reg
 {
-    MPU6050_REG_XG_OFFS_TC = 0x00,
-    MPU6050_REG_YG_OFFS_TC = 0x01,
-    MPU6050_REG_ZG_OFFS_TC = 0x02,
+    MPU6050_REG_XG_OFFS_TC = 0x00, // [7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
+    MPU6050_REG_YG_OFFS_TC = 0x01, // [7] PWR_MODE, [6:1] YG_OFFS_TC, [0] OTP_BNK_VLD
+    MPU6050_REG_ZG_OFFS_TC = 0x02, // [7] PWR_MODE, [6:1] ZG_OFFS_TC, [0] OTP_BNK_VLD
 
-    MPU6050_REG_X_FINE_GAIN = 0x03,
-    MPU6050_REG_Y_FINE_GAIN = 0x04,
-    MPU6050_REG_Z_FINE_GAIN = 0x05,
+    MPU6050_REG_X_FINE_GAIN = 0x03, // [7:0] X_FINE_GAIN
+    MPU6050_REG_Y_FINE_GAIN = 0x04, // [7:0] Y_FINE_GAIN
+    MPU6050_REG_Z_FINE_GAIN = 0x05, // [7:0] Z_FINE_GAIN
 
-    MPU6050_REG_XA_OFFS_H = 0x06,
+    MPU6050_REG_XA_OFFS_H = 0x06, // [15:0] XA_OFFS
     MPU6050_REG_XA_OFFS_L = 0x07,
 
-    MPU6050_REG_YA_OFFS_H = 0x08,
+    MPU6050_REG_YA_OFFS_H = 0x08, // [15:0] YA_OFFS
     MPU6050_REG_YA_OFFS_L = 0x09,
 
-    MPU6050_REG_ZA_OFFS_H = 0x0A,
+    MPU6050_REG_ZA_OFFS_H = 0x0A, // [15:0] ZA_OFFS
     MPU6050_REG_ZA_OFFS_L = 0x0B,
 
-    MPU6050_REG_SELF_TEST_X = 0x0D,
-    MPU6050_REG_SELF_TEST_Y = 0x0E,
-    MPU6050_REG_SELF_TEST_Z = 0x0F,
-    MPU6050_REG_SELF_TEST_A = 0x10,
+    MPU6050_REG_SELF_TEST_X = 0x0D, // [7:5] XA_TEST[4-2], [4:0] XG_TEST[4-0]
+    MPU6050_REG_SELF_TEST_Y = 0x0E, // [7:5] YA_TEST[4-2], [4:0] YG_TEST[4-0]
+    MPU6050_REG_SELF_TEST_Z = 0x0F, // [7:5] ZA_TEST[4-2], [4:0] ZG_TEST[4-0]
+    MPU6050_REG_SELF_TEST_A = 0x10, // [5:4] XA_TEST[1-0], [3:2] YA_TEST[1-0], [1:0] ZA_TEST[1-0]
 
-    MPU6050_REG_XG_OFFS_USRH = 0x13,
+    MPU6050_REG_XG_OFFS_USRH = 0x13, // [15:0] XG_OFFS_USR
     MPU6050_REG_XG_OFFS_USRL = 0x14,
-    MPU6050_REG_YG_OFFS_USRH = 0x15,
+    MPU6050_REG_YG_OFFS_USRH = 0x15, // [15:0] YG_OFFS_USR
     MPU6050_REG_YG_OFFS_USRL = 0x16,
-    MPU6050_REG_ZG_OFFS_USRH = 0x17,
+    MPU6050_REG_ZG_OFFS_USRH = 0x17, // [15:0] ZG_OFFS_USR
     MPU6050_REG_ZG_OFFS_USRL = 0x18,
 
     MPU6050_REG_SMPLRT_DIV = 0x19,
@@ -326,9 +326,6 @@ typedef struct mpu6050_dev
 {
     i2cdev_bus_t* bus;
     i2cdev_dev_addr_t addr;
-    i2cdev_delay_api_t* delay;
-    mpu6050_accel_range_t accel_range;
-    mpu6050_gyro_range_t gyro_range;
 } mpu6050_dev_t;
 
 typedef struct mpu6050_3axis_raw_data
@@ -345,11 +342,24 @@ typedef struct mpu6050_3axis_data
     float z;
 } mpu6050_3axis_data_t;
 
+typedef struct mpu6050_motion_raw_data
+{
+    mpu6050_3axis_raw_data_t accel;
+    mpu6050_3axis_raw_data_t gyro;
+} mpu6050_motion_raw_data_t;
+
 typedef struct mpu6050_motion_data
 {
     mpu6050_3axis_data_t accel;
     mpu6050_3axis_data_t gyro;
 } mpu6050_motion_data_t;
+
+typedef struct mpu6050_all_raw_data
+{
+    mpu6050_3axis_raw_data_t accel;
+    mpu6050_3axis_raw_data_t gyro;
+    int16_t temperature;
+} mpu6050_all_raw_data;
 
 typedef struct mpu6050_all_data
 {
@@ -444,12 +454,22 @@ inline int mpu6050_check(mpu6050_dev_t* dev)
 }
 
 /**
- * @brief Put or wake up the MPU6050.
+ * @brief Put the MPU6050 into sleep mode or wake it up.
  */
 inline int mpu6050_set_sleep_enabled(mpu6050_dev_t* dev, const bool enabled)
 {
     return i2cdev_reg_write_bit(dev->bus, dev->addr, MPU6050_REG_PWR_MGMT_1,
                                 MPU6050_PWR_MGMT_1_SLEEP_SHIFT, enabled);
+}
+
+inline int mpu6050_sleep(mpu6050_dev_t* dev)
+{
+    return mpu6050_set_sleep_enabled(dev, true);
+}
+
+inline int mpu6050_wakeup(mpu6050_dev_t* dev)
+{
+    return mpu6050_set_sleep_enabled(dev, false);
 }
 
 /**
@@ -770,6 +790,43 @@ inline int mpu6050_read_raw_accelerometer_measurements(mpu6050_dev_t* dev, mpu60
     return I2CDEV_RESULT_OK;
 }
 
+inline int mpu6050_read_accelerometer_measurements(mpu6050_dev* dev,
+                                                   mpu6050_3axis_data* accel,
+                                                   mpu6050_accel_range_t range)
+{
+    mpu6050_3axis_raw_data_t raw_data;
+    int ret = mpu6050_read_raw_accelerometer_measurements(dev, &raw_data);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *accel = mpu6050_process_accel_data(&raw_data, range);
+
+    return I2CDEV_RESULT_OK;
+}
+
+inline int mpu6050_read_accelerometer_measurements_auto(mpu6050_dev* dev, mpu6050_3axis_data* accel)
+{
+    mpu6050_3axis_raw_data_t raw_data;
+    int ret = mpu6050_read_raw_accelerometer_measurements(dev, &raw_data);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    mpu6050_accel_range_t accel_range;
+    ret = mpu6050_read_accelerometer_range(dev, &accel_range);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *accel = mpu6050_process_accel_data(&raw_data, accel_range);
+
+    return I2CDEV_RESULT_OK;
+}
+
 inline int mpu6050_read_raw_temperature_measurements(mpu6050_dev_t* dev, int16_t* temp)
 {
     uint8_t tmp[2];
@@ -781,6 +838,20 @@ inline int mpu6050_read_raw_temperature_measurements(mpu6050_dev_t* dev, int16_t
     }
 
     *temp = (int16_t)((tmp[0] << 8) | tmp[1]);
+
+    return I2CDEV_RESULT_OK;
+}
+
+inline int mpu6050_read_temperature_measurements(mpu6050_dev_t* dev, float* temp)
+{
+    int16_t raw_temp;
+    int ret = mpu6050_read_raw_temperature_measurements(dev, &raw_temp);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *temp = mpu6050_process_temperature(raw_temp);
 
     return I2CDEV_RESULT_OK;
 }
@@ -798,6 +869,41 @@ inline int mpu6050_read_raw_gyro_measurements(mpu6050_dev_t* dev, mpu6050_3axis_
     gyro->x = (int16_t)((tmp[0] << 8) | tmp[1]);
     gyro->y = (int16_t)((tmp[2] << 8) | tmp[3]);
     gyro->z = (int16_t)((tmp[4] << 8) | tmp[5]);
+
+    return I2CDEV_RESULT_OK;
+}
+
+inline int mpu6050_read_gyro_measurements(mpu6050_dev_t* dev, mpu6050_3axis_data* gyro, mpu6050_gyro_range_t range)
+{
+    mpu6050_3axis_raw_data_t raw_data;
+    int ret = mpu6050_read_raw_gyro_measurements(dev, &raw_data);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *gyro = mpu6050_process_gyro_data(&raw_data, range);
+
+    return I2CDEV_RESULT_OK;
+}
+
+inline int mpu6050_read_gyro_measurements_auto(mpu6050_dev_t* dev, mpu6050_3axis_data* gyro)
+{
+    mpu6050_3axis_raw_data_t raw_data;
+    int ret = mpu6050_read_raw_gyro_measurements(dev, &raw_data);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    mpu6050_gyro_range_t gyro_range;
+    ret = mpu6050_read_gyro_range(dev, &gyro_range);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *gyro = mpu6050_process_gyro_data(&raw_data, gyro_range);
 
     return I2CDEV_RESULT_OK;
 }
@@ -828,6 +934,68 @@ inline int mpu6050_read_raw_all_measurements(mpu6050_dev* dev,
     return I2CDEV_RESULT_OK;
 }
 
+inline int mpu6050_read_all_measurements(mpu6050_dev* dev,
+                                         mpu6050_3axis_data* accel,
+                                         mpu6050_accel_range_t range,
+                                         float* temp,
+                                         mpu6050_3axis_data* gyro,
+                                         mpu6050_gyro_range_t gyro_range)
+{
+    mpu6050_3axis_raw_data_t raw_accel;
+    mpu6050_3axis_raw_data_t raw_gyro;
+    int16_t raw_temp;
+
+    const int ret = mpu6050_read_raw_all_measurements(dev, &raw_accel, &raw_temp, &raw_gyro);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *accel = mpu6050_process_accel_data(&raw_accel, range);
+    *temp = mpu6050_process_temperature(raw_temp);
+    *gyro = mpu6050_process_gyro_data(&raw_gyro, gyro_range);
+
+    return ret;
+}
+
+inline int mpu6050_read_all_measurements_auto(mpu6050_dev* dev,
+                                              mpu6050_3axis_data* accel,
+                                              float* temp,
+                                              mpu6050_3axis_data* gyro)
+{
+    mpu6050_3axis_raw_data_t raw_accel;
+    mpu6050_3axis_raw_data_t raw_gyro;
+    int16_t raw_temp;
+
+    auto ret = mpu6050_read_raw_all_measurements(dev, &raw_accel, &raw_temp, &raw_gyro);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    mpu6050_accel_range_t accel_range;
+    ret = mpu6050_read_accelerometer_range(dev, &accel_range);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *accel = mpu6050_process_accel_data(&raw_accel, accel_range);
+
+    *temp = mpu6050_process_temperature(raw_temp);
+
+    mpu6050_gyro_range_t gyro_range;
+    ret = mpu6050_read_gyro_range(dev, &gyro_range);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *gyro = mpu6050_process_gyro_data(&raw_gyro, gyro_range);
+
+    return I2CDEV_RESULT_OK;
+}
+
 /**
  * @brief Read accelerometer and gyroscope measurements.
  *
@@ -843,13 +1011,70 @@ inline int mpu6050_read_raw_all_measurements(mpu6050_dev* dev,
  * @retval I2CDEV_RESULT_OK If successful.
  * @retval negative Error code if an error occurred.
  */
-inline int mpu6050_read_motion_measurements(mpu6050_dev* dev,
-                                            mpu6050_3axis_raw_data* accel,
-                                            mpu6050_3axis_raw_data* gyro)
+inline int mpu6050_read_raw_motion_measurements(mpu6050_dev* dev,
+                                                mpu6050_3axis_raw_data* accel,
+                                                mpu6050_3axis_raw_data* gyro)
 {
     int16_t temp;
 
     return mpu6050_read_raw_all_measurements(dev, accel, &temp, gyro);
+}
+
+inline int mpu6050_read_motion_measurements(mpu6050_dev* dev,
+                                            mpu6050_3axis_data* accel,
+                                            mpu6050_accel_range_t range,
+                                            mpu6050_3axis_data* gyro,
+                                            mpu6050_gyro_range_t gyro_range)
+{
+    mpu6050_3axis_raw_data_t raw_accel;
+    mpu6050_3axis_raw_data_t raw_gyro;
+    int16_t raw_temp;
+
+    const int ret = mpu6050_read_raw_all_measurements(dev, &raw_accel, &raw_temp, &raw_gyro);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *accel = mpu6050_process_accel_data(&raw_accel, range);
+    *gyro = mpu6050_process_gyro_data(&raw_gyro, gyro_range);
+
+    return I2CDEV_RESULT_OK;
+}
+
+inline int mpu6050_read_motion_measurements_auto(mpu6050_dev* dev,
+                                                 mpu6050_3axis_data* accel,
+                                                 mpu6050_3axis_data* gyro)
+{
+    mpu6050_3axis_raw_data_t raw_accel;
+    mpu6050_3axis_raw_data_t raw_gyro;
+    int16_t raw_temp;
+
+    int ret = mpu6050_read_raw_all_measurements(dev, &raw_accel, &raw_temp, &raw_gyro);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    mpu6050_accel_range_t accel_range;
+    ret = mpu6050_read_accelerometer_range(dev, &accel_range);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *accel = mpu6050_process_accel_data(&raw_accel, accel_range);
+
+    mpu6050_gyro_range_t gyro_range;
+    ret = mpu6050_read_gyro_range(dev, &gyro_range);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    *gyro = mpu6050_process_gyro_data(&raw_gyro, gyro_range);
+
+    return I2CDEV_RESULT_OK;
 }
 
 inline int mpu6050_reset(mpu6050_dev_t* dev)
