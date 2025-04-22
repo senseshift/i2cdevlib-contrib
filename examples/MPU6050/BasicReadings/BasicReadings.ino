@@ -1,4 +1,4 @@
-#include <I2CDevLib.h>
+#include <i2cdevbus_hal_arduino.hpp>
 #include <i2cdev/mpu6050.hpp>
 
 i2cdev::MPU6050 mpu6050;
@@ -35,7 +35,14 @@ void setup(void) {
 }
 
 void loop() {
-    auto measurements = mpu6050.getAllMeasurements();
+    i2cdev::Result<mpu6050_all_data> result = mpu6050.getAllMeasurements();
+    if (!result.ok()) {
+        Serial.print("Failed to read measurements");
+        delay(1000);
+        return;
+    }
+
+    const mpu6050_all_data& measurements = result.value;
 
     Serial.print("Accelerometer X: "); Serial.print(measurements.accel.x); Serial.print(" Y: "); Serial.print(measurements.accel.y); Serial.print(" Z: "); Serial.println(measurements.accel.z);
     Serial.print("Gyroscope     X: "); Serial.print(measurements.gyro.x); Serial.print(" Y: "); Serial.print(measurements.gyro.y); Serial.print(" Z: "); Serial.println(measurements.gyro.z);
