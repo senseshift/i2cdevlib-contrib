@@ -2,53 +2,79 @@
 #define __I2CDEVLIB_MAX170XX_HPP__
 
 #include "i2cdev/max170xx.h"
-#include "i2cdevbus.hpp"
+#include "i2cdev/common.hpp"
 
 namespace i2cdev {
-    class MAX170XX {
+    class MAX170XX : public max170xx_dev_t {
       public:
-#ifdef I2CDEV_DEFAULT_BUS
-        MAX170XX(uint8_t addr = MAX1704X_I2CADDR_BASE, I2CDevBus& bus = I2CDEV_DEFAULT_BUS) : _addr(addr), _bus(bus) {}
+    #ifdef I2CDEVLIB_DEFAULT_BUS
+        MAX170XX(uint8_t addr = MAX1704X_I2CADDR_BASE, i2cdev_bus_t* bus = &I2CDEVLIB_DEFAULT_BUS)
 #else
-        MAX170XX(uint8_t addr, I2CDevBus& bus) : _addr(addr), _bus(bus) {}
+        MAX170XX(uint8_t addr, i2cdev_bus_t* bus)
 #endif
+        {
+          this->addr = addr;
+          this->bus = bus;
+        }
 
-        [[nodiscard]] auto check() -> i2cdev_result_t;
+        [[nodiscard]] auto check() -> i2cdev_result_t
+        {
+          return static_cast<i2cdev_result_t>(max170xx_check(this));
+        }
 
-        [[nodiscard]] inline auto quickStart() -> i2cdev_result_t;
+        [[nodiscard]] inline auto quickStart() -> i2cdev_result_t
+        {
+            return static_cast<i2cdev_result_t>(max170xx_quick_start(this));
+        }
 
-      protected:
-        uint8_t _addr;
-        I2CDevBus& _bus;
+        [[nodiscard]] virtual auto readVoltage(float *voltage) -> i2cdev_result_t;
+
+        auto getVoltage() -> Result<float>
+        {
+            float voltage;
+            const auto ret = this->readVoltage(&voltage);
+            return {voltage, ret};
+        }
+
+        [[nodiscard]] virtual auto readSoc(float *soc) -> i2cdev_result_t;
+
+        auto getSoc() -> Result<float>
+        {
+            float soc;
+            const auto ret = this->readSoc(&soc);
+            return {soc, ret};
+        }
+
+        [[nodiscard]] inline auto readRawVoltage(uint16_t *voltage) -> i2cdev_result_t
+        {
+            return static_cast<i2cdev_result_t>(max170xx_read_raw_voltage(this, voltage));
+        }
+
+        [[nodiscard]] inline auto readRawSoc(uint16_t *soc) -> i2cdev_result_t
+        {
+            return static_cast<i2cdev_result_t>(max170xx_read_raw_soc(this, soc));
+        }
+
+        [[nodiscard]] inline auto reset() -> i2cdev_result_t;
     };
 
     class MAX17043 : public MAX170XX {
       public:
         using MAX170XX::MAX170XX;
 
-        inline auto readVoltage() -> float
+        [[nodiscard]] auto readVoltage(float *voltage) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_VCELL, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return (data >> 4) / 800.0f;
+            return static_cast<i2cdev_result_t>(max17043_read_voltage(this, voltage));
         }
 
-        inline auto readSoc() -> float
+        [[nodiscard]] auto readSoc(float *soc) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_SOC, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return ((data & 0xFF00) >> 8) + ((data & 0x00FF) / 256.0f);
+            return static_cast<i2cdev_result_t>(max17043_read_soc(this, soc));
         }
 
         [[nodiscard]] inline auto reset() -> i2cdev_result_t
         {
-            return this->_bus.writeReg16(this->_addr, MAX1704X_REG_COMMAND, static_cast<uint16_t>(MAX1704_COMMAND_POR_43_44));
+            return static_cast<i2cdev_result_t>(max17043_reset(this));
         }
     };
 
@@ -56,29 +82,19 @@ namespace i2cdev {
       public:
         using MAX170XX::MAX170XX;
 
-        inline auto readVoltage() -> float
+        [[nodiscard]] inline auto readVoltage(float *voltage) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_VCELL, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return (data >> 4) / 400.0f;
+            return static_cast<i2cdev_result_t>(max17044_read_voltage(this, voltage));
         }
 
-        inline auto readSoc() -> float
+        [[nodiscard]] inline auto readSoc(float *soc) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_SOC, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return ((data & 0xFF00) >> 8) + ((data & 0x00FF) / 256.0f);
+            return static_cast<i2cdev_result_t>(max17044_read_soc(this, soc));
         }
 
         [[nodiscard]] inline auto reset() -> i2cdev_result_t
         {
-            return this->_bus.writeReg16(this->_addr, MAX1704X_REG_COMMAND, static_cast<uint16_t>(MAX1704_COMMAND_POR_43_44));
+            return static_cast<i2cdev_result_t>(max17044_reset(this));
         }
     };
 
@@ -86,29 +102,19 @@ namespace i2cdev {
       public:
         using MAX170XX::MAX170XX;
 
-        inline auto readVoltage() -> float
+        [[nodiscard]] inline auto readVoltage(float *voltage) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_VCELL, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return data * 5.0f / 64000.0f;
+            return static_cast<i2cdev_result_t>(max170x8_read_voltage(this, voltage));
         }
 
-        inline auto readSoc() -> float
+        [[nodiscard]] inline auto readSoc(float *soc) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_SOC, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return data / 256.0f;
+            return static_cast<i2cdev_result_t>(max170x8_read_soc(this, soc));
         }
 
         [[nodiscard]] inline auto reset() -> i2cdev_result_t
         {
-            return this->_bus.writeReg16(this->_addr, MAX1704X_REG_COMMAND, static_cast<uint16_t>(MAX1704_COMMAND_POR_X8_X9));
+            return static_cast<i2cdev_result_t>(max170x8_reset(this));
         }
     };
 
@@ -119,55 +125,24 @@ namespace i2cdev {
       public:
         using MAX170XX::MAX170XX;
 
-        inline auto readVoltage() -> float
+        [[nodiscard]] inline auto readVoltage(float *voltage) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_VCELL, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return data * 5.0f / 32000.0f;
+            return static_cast<i2cdev_result_t>(max170x9_read_voltage(this, voltage));
         }
 
-        inline auto readSoc() -> float
+        [[nodiscard]] inline auto readSoc(float *soc) -> i2cdev_result_t
         {
-            uint16_t data;
-            if (this->_bus.readReg16(this->_addr, MAX170XX_REG_SOC, &data) != I2CDEV_RESULT_OK) {
-                return 0.0f;
-            }
-
-            return data / 256.0f;
+            return static_cast<i2cdev_result_t>(max170x9_read_soc(this, soc));
         }
 
         [[nodiscard]] inline auto reset() -> i2cdev_result_t
         {
-            return this->_bus.writeReg16(this->_addr, MAX1704X_REG_COMMAND, static_cast<uint16_t>(MAX1704_COMMAND_POR_X8_X9));
+            return static_cast<i2cdev_result_t>(max170x9_reset(this));
         }
     };
 
     using MAX17049 = MAX170x9;
     using MAX17059 = MAX170x9;
-
-    inline auto MAX170XX::check() -> i2cdev_result_t {
-        uint16_t data;
-        i2cdev_result_t result;
-
-        // wait for the device to be ready
-        for (int i = 0; i < 5; i++) {
-            result = this->_bus.readReg16(this->_addr, MAX170XX_REG_VERSION, &data);
-            if (result == I2CDEV_RESULT_OK) {
-                break;
-            }
-
-            i2cdev_platform_sleep_us(10000);
-        }
-
-        return result;
-    }
-
-    inline auto MAX170XX::quickStart() -> i2cdev_result_t {
-        return this->_bus.writeReg16(this->_addr, MAX170XX_REG_MODE, static_cast<uint16_t>(MAX1704X_MODE_QUICKSTART));
-    }
 }
 
 #endif //__I2CDEVLIB_MAX170XX_HPP__
