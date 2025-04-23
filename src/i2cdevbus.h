@@ -463,6 +463,58 @@ static int i2cdev_reg_write_bit(const i2cdev_bus_t* bus,
                                 set ? (1 << bit) : 0);
 }
 
+static int i2cdev_reg_read_u16_le(const i2cdev_bus_t* bus,
+                                  const i2cdev_dev_addr_t addr,
+                                  const i2cdev_reg_addr_t reg,
+                                  uint16_t* buf)
+{
+    uint8_t tmp[2];
+    int ret = i2cdev_reg_burst_read_u8(bus, addr, reg, tmp, sizeof(tmp));
+    if (ret != I2CDEV_RESULT_OK)
+    {
+        return ret;
+    }
+
+    // Combine bytes assuming LSB first
+    *buf = (tmp[1] << 8) | tmp[0];
+    return I2CDEV_RESULT_OK;
+}
+
+static int i2cdev_reg_read_u16_be(const i2cdev_bus_t* bus,
+                                  const i2cdev_dev_addr_t addr,
+                                  const i2cdev_reg_addr_t reg,
+                                  uint16_t* buf)
+{
+    uint8_t tmp[2];
+    int ret = i2cdev_reg_burst_read_u8(bus, addr, reg, tmp, sizeof(tmp));
+    if (ret != I2CDEV_RESULT_OK)
+    {
+        return ret;
+    }
+
+    // Combine bytes assuming MSB first
+    *buf = (tmp[0] << 8) | tmp[1];
+    return I2CDEV_RESULT_OK;
+}
+
+static int i2cdev_reg_write_u16_le(const i2cdev_bus_t* bus,
+                                   const i2cdev_dev_addr_t addr,
+                                   const i2cdev_reg_addr_t reg,
+                                   const uint16_t val)
+{
+    uint8_t tmp[2] = { (uint8_t)(val & 0xFF), (uint8_t)((val >> 8) & 0xFF) };
+    return i2cdev_reg_burst_write_u8(bus, addr, reg, tmp, sizeof(tmp));
+}
+
+static int i2cdev_reg_write_u16_be(const i2cdev_bus_t* bus,
+                                   const i2cdev_dev_addr_t addr,
+                                   const i2cdev_reg_addr_t reg,
+                                   const uint16_t val)
+{
+    uint8_t tmp[2] = { (uint8_t)((val >> 8) & 0xFF), (uint8_t)(val & 0xFF) };
+    return i2cdev_reg_burst_write_u8(bus, addr, reg, tmp, sizeof(tmp));
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
