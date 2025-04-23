@@ -767,8 +767,7 @@ inline int mpu6050_read_filter_bandwidth(mpu6050_dev_t* dev, mpu6050_filter_band
         return ret;
     }
 
-    *bandwidth = (mpu6050_filter_bandwidth_t)((tmp & MPU6050_REG_CONFIG_DLPF_CFG_MASK) >>
-        MPU6050_REG_CONFIG_DLPF_CFG_SHIFT);
+    *bandwidth = (mpu6050_filter_bandwidth_t)((tmp & MPU6050_REG_CONFIG_DLPF_CFG_MASK) >> MPU6050_REG_CONFIG_DLPF_CFG_SHIFT);
 
     return I2CDEV_RESULT_OK;
 }

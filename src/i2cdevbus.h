@@ -9,6 +9,26 @@
 extern "C" {
 #endif // __cplusplus
 
+#ifndef I2CDEVLIB_LOG_V
+# define I2CDEVLIB_LOG_V(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_D
+# define I2CDEVLIB_LOG_D(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_I
+# define I2CDEVLIB_LOG_I(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_W
+# define I2CDEVLIB_LOG_W(...)
+#endif
+
+#ifndef I2CDEVLIB_LOG_E
+# define I2CDEVLIB_LOG_E(...)
+#endif
+
 typedef uint16_t i2cdev_dev_addr_t;
 typedef uint8_t i2cdev_reg_addr_t;
 
