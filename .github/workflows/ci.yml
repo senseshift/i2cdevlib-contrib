@@ -28,7 +28,9 @@ jobs:
           - "PCA9685/VibroPulse"
           - "MPU6050/BasicReadings"
           - "MAX170XX/Simple"
-        boards: [ [ uno, esp32dev ] ]
+        board:
+          - uno
+          - esp32dev
 
     steps:
       - uses: actions/checkout@v4
@@ -41,10 +43,17 @@ jobs:
           echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
 
           # check if example folder contains a wokwi.toml file
-          SHOULD_UPLOAD_ARTIFACTS=$(test -f "examples/${{ matrix.example }}/wokwi.toml" && echo "true" || echo "false")
+          HAS_WOKWI=$(test -f "examples/${{ matrix.example }}/wokwi.toml" && echo "true" || echo "false")
+          
+          # check if example folder contains a diagram.${{ matrix.board }}.json file
+          HAS_DIAGRAM=$(test -f "examples/${{ matrix.example }}/diagram.${{ matrix.board }}.json" && echo "true" || echo "false")
+          
+          # if both files exist, set SHOULD_UPLOAD_ARTIFACTS to true
+          SHOULD_UPLOAD_ARTIFACTS=$(( $HAS_WOKWI == "true" && $HAS_DIAGRAM == "true" ) && echo "true" || echo "false")
+          
           echo "upload_artifact=$SHOULD_UPLOAD_ARTIFACTS" >> "$GITHUB_OUTPUT"
           
-          ARTIFACT_NAME=$(echo "${{ matrix.example }}" | tr '/' '-')
+          ARTIFACT_NAME=$(echo "${{ matrix.example }}.${{ matrix.board }}" | tr '/' '-')
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
           
           # mkdtemp
@@ -86,7 +95,7 @@ jobs:
         run: |
           # for whatever reason, if we specify the build dir, it doesn't work
           # mkdir -p ${{ env.PLATFORMIO_BUILD_DIR }}
-          pio ci --lib="." --board=${{ join(matrix.boards, ' --board=') }} --keep-build-dir 2>&1 | tee output.log
+          pio ci --lib="." --board=${{ matrix.board }} --keep-build-dir 2>&1 | tee output.log
           
           export PLATFORMIO_BUILD_DIR=$(grep -oP 'The following files/directories have been created in \K.*' output.log)
           echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
@@ -110,12 +119,16 @@ jobs:
     needs: platformio
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
 
-        include:
-          - example: "MPU6050/BasicReadings"
-          - board: uno
+        example:
+          - "MPU6050/BasicReadings"
+
+        board:
+          - uno
+          - esp32dev
 
     steps:
       - uses: actions/checkout@v4
@@ -123,7 +136,7 @@ jobs:
       - name: Prepare metadata
         id: metadata
         run: |
-          ARTIFACT_NAME=$(echo "${{ matrix.example }}" | tr '/' '-')
+          ARTIFACT_NAME=$(echo "${{ matrix.example }}.${{ matrix.board }}" | tr '/' '-')
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v4
