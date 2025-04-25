@@ -6,7 +6,7 @@
 
 namespace i2cdev
 {
-    class MPU6050 : mpu6050_dev_t
+    class MPU6050 : public mpu6050_dev_t
     {
         mpu6050_accel_range_t _accel_range;
         mpu6050_gyro_range_t _gyro_range;

@@ -89,6 +89,34 @@ static inline int i2cdev_arduino_transfer(
 
         if (isWrite)
         {
+            // Handle two-message register writes (reg address + data) in one transaction to avoid Arduino repeated-start errors
+            if (!sendStop && (i + 1) < num_msgs &&
+                !(msgs[i+1].flags & I2CDEV_MSG_READ) && (msgs[i+1].flags & I2CDEV_MSG_STOP))
+            {
+                const auto *next = &msgs[i + 1];
+                I2CDEVLIB_LOG_I("[I2CDEV] Combined WRITE reg+data");
+                wire->beginTransmission((uint8_t)addr);
+                // write register address
+                if (wire->write(msgs[i].buf, msgs[i].len) != msgs[i].len)
+                {
+                    I2CDEVLIB_LOG_E("[I2CDEV] ERROR: combined write() reg short");
+                    return I2CDEV_RESULT_EIO;
+                }
+                // write register data
+                if (wire->write(next->buf, next->len) != next->len)
+                {
+                    I2CDEVLIB_LOG_E("[I2CDEV] ERROR: combined write() data short");
+                    return I2CDEV_RESULT_EIO;
+                }
+                int rc = wire->endTransmission(true);
+                I2CDEVLIB_LOG_I("[I2CDEV] endTransmission(combined, doStop=1) => %d", rc);
+                if (rc != 0)
+                {
+                    return (rc == 5) ? I2CDEV_RESULT_ETIMEDOUT : I2CDEV_RESULT_EIO;
+                }
+                i++; // skip the data message
+                continue;
+            }
             for (size_t off = 0; off < cur->len; off += I2CDEVLIB_BUFFER_LENGTH)
             {
                 size_t chunk = min((size_t) I2CDEVLIB_BUFFER_LENGTH, cur->len - off);

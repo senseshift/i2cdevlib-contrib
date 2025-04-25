@@ -81,7 +81,7 @@ typedef enum i2cdev_result
     /**
      * @brief Operation would block.
      */
-    I2CDEV_RESULT_EWOULDBBLOCK = I2CDEV_RESULT_EAGAIN,
+    I2CDEV_RESULT_EWOULDBLOCK = I2CDEV_RESULT_EAGAIN,
 } i2cdev_result_t;
 
 /**
@@ -413,20 +413,18 @@ static int i2cdev_reg_update_u8(const i2cdev_bus_t* bus,
                                 const uint8_t val)
 {
     uint8_t tmp;
-
     int ret = i2cdev_reg_read_u8(bus, addr, reg, &tmp);
     if (ret)
     {
         return ret;
     }
-
-    tmp = (tmp & ~mask) | (val & mask);
+    // If register already has the desired bits, skip write
     if ((tmp & mask) == (val & mask))
     {
         return I2CDEV_RESULT_OK;
     }
-
-    return i2cdev_reg_write_u8(bus, addr, reg, tmp);
+    uint8_t new_val = (tmp & ~mask) | (val & mask);
+    return i2cdev_reg_write_u8(bus, addr, reg, new_val);
 }
 
 /**

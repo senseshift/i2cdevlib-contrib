@@ -644,7 +644,10 @@ inline int mpu6050_read_accelerometer_range(mpu6050_dev_t* dev, mpu6050_accel_ra
         return ret;
     }
 
-    *range = (mpu6050_accel_range_t)((tmp & MPU6050_ACCEL_CONFIG_AFS_SEL_MASK) >> MPU6050_ACCEL_CONFIG_AFS_SEL_SHIFT);
+    *range = (mpu6050_accel_range_t)(
+        (tmp & MPU6050_ACCEL_CONFIG_AFS_SEL_MASK)
+        >> MPU6050_ACCEL_CONFIG_AFS_SEL_SHIFT
+    );
 
     return I2CDEV_RESULT_OK;
 }

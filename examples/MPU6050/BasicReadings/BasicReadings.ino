@@ -17,7 +17,6 @@ void setup(void) {
 
     if (mpu6050.check() != I2CDEV_RESULT_OK) {
         Serial.println("Failed to find MPU6050 chip");
-        while (true) {}
     }
     Serial.println("MPU6050 Found!");
 
@@ -35,14 +34,7 @@ void setup(void) {
 }
 
 void loop() {
-    i2cdev::Result<mpu6050_all_data> result = mpu6050.getAllMeasurements();
-    if (!result.ok()) {
-        Serial.print("Failed to read measurements");
-        delay(1000);
-        return;
-    }
-
-    const mpu6050_all_data& measurements = result.value;
+    auto measurements = mpu6050.getAllMeasurements().value;
 
     Serial.print("Accelerometer X: "); Serial.print(measurements.accel.x); Serial.print(" Y: "); Serial.print(measurements.accel.y); Serial.print(" Z: "); Serial.println(measurements.accel.z);
     Serial.print("Gyroscope     X: "); Serial.print(measurements.gyro.x); Serial.print(" Y: "); Serial.print(measurements.gyro.y); Serial.print(" Z: "); Serial.println(measurements.gyro.z);
