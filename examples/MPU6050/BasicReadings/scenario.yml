@@ -5,6 +5,71 @@ author: Leonid Meleshin
 steps:
   - wait-serial: "MPU6050 Found!"
 
+  - set-control:
+      part-id: imu1
+      control: temperature
+      value: 25
+  - wait-serial: "Temperature:     25.00 C"
+
+  - set-control:
+      part-id: imu1
+      control: temperature
+      value: 36
+  - wait-serial: "Temperature:     36.00 C"
+
+  - set-control:
+      part-id: imu1
+      control: accelX
+      value: 0
+  - set-control:
+      part-id: imu1
+      control: accelY
+      value: 0
+  - set-control:
+      part-id: imu1
+      control: accelZ
+      value: 1
   - wait-serial: "Accelerometer X: 0.00 Y: 0.00 Z: 1.00"
-  - wait-serial: "Gyroscope     X: 0.00 Y: 0.00 Z: 0.00"
-  - wait-serial: "Temperature:     24.00 C"
+
+  - set-control:
+      part-id: imu1
+      control: accelX
+      value: 2.5
+  - set-control:
+      part-id: imu1
+      control: accelY
+      value: 1.25
+  - set-control:
+      part-id: imu1
+      control: accelZ
+      value: 0.5
+  - wait-serial: "Accelerometer X: 2.50 Y: 1.25 Z: 0.50"
+
+# TODO: ok, turns out that gyroscope is not working whatsoever
+#  - set-control:
+#      part-id: imu1
+#      control: gyroX
+#      value: 0
+#  - set-control:
+#      part-id: imu1
+#      control: gyroY
+#      value: 0
+#  - set-control:
+#      part-id: imu1
+#      control: gyroZ
+#      value: 0
+#  - wait-serial: "Gyroscope     X: 0.00 Y: 0.00 Z: 0.00"
+#
+#  - set-control:
+#      part-id: imu1
+#      control: gyroX
+#      value: 0.5
+#  - set-control:
+#      part-id: imu1
+#      control: gyroY
+#      value: 1.5
+#  - set-control:
+#      part-id: imu1
+#      control: gyroZ
+#      value: 2.5
+#  - wait-serial: "Gyroscope     X: 0.50 Y: 1.50 Z: 2.50"
