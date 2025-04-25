@@ -12,8 +12,14 @@ on:
       - main
       - develop
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   platformio:
+    name: "Build / ${{ matrix.example }} / ${{ matrix.board }} / ${{ matrix.os }}"
+
     runs-on: ${{ matrix.os }}
 
     # env:
@@ -22,15 +28,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ubuntu-latest]
         example:
           - "PCA9685/Servo"
           - "PCA9685/VibroPulse"
           - "MPU6050/BasicReadings"
           - "MAX170XX/Simple"
         board:
-          - uno
-          - esp32dev
+          # Atmel boards
+          - uno # Arduino Uno / ATMEGA328P / atmelavr
+          # - due # Arduino Due / AT91SAM3X8E / atmelsam # TODO: fix compatibility
+          # - mega # Arduino Mega 2560 / ATMEGA2560 / atmelavr
+          # - zero # Arduino Zero / SAMD21G18A / atmelsam
+          # - adafruit_metro_m4 # Adafruit Metro M4 / SAMD51J19 / atmelsam
+          - uno_wifi_rev2 # Arduino Uno WiFi Rev2 / ATMEGA4809 / atmelmegaavr
+
+          # nRF boards
+          - nano33ble # Arduino Nano 33 BLE / nRF52840 / nordicnrf52
+
+          # STM boards
+          - opta_m4 # Arduino Opta M4 / STM32H747XIH6 / ststm32
+
+          # Espressif boards
+          - esp32dev # Espressif ESP32 Dev Module / ESP32 / espressif32
+          - d1_mini # Wemos D1 Mini / ESP8266 / espressif8266
+
+          # Raspberry Pi Pico boards
+          - pico # Raspberry Pi Pico / RP2040 / rp2040
+
+          # Teensy boards
+          - teensy41 # Teensy 4.1 / IMXRT1062 / teensy
+
+          # - uno_pic32 # Digilent chipKIT UNO32 / PIC32MX320F128H / microchippic32 # TODO: fix compatibility
+
+          # - frdm_k64f # Freescale Kinetis FRDM-K64F / MK64FN1M0VLL12 / freescalekinetis # TODO: fix compatibility
+
+          # - efm32gg11_stk3701 # SLSTK3701A Giant Gecko S1 / EFM32GG11B820F2048GL192 / siliconlabsefm32 # TODO: fix compatibility
+
+          # - hifive1-revb # HiFive1 Rev B / FE310 / sifive # TODO: fix compatibility
+
+          # - lpmsp430fr4133 # TI LaunchPad MSP-EXP430FR4133LP / MSP430FR4133 / timsp430 # TODO: fix compatibility
 
     steps:
       - uses: actions/checkout@v4
@@ -44,18 +81,18 @@ jobs:
 
           # check if example folder contains a wokwi.toml file
           HAS_WOKWI=$(test -f "examples/${{ matrix.example }}/wokwi.toml" && echo "true" || echo "false")
-          
+
           # check if example folder contains a diagram.${{ matrix.board }}.json file
           HAS_DIAGRAM=$(test -f "examples/${{ matrix.example }}/diagram.${{ matrix.board }}.json" && echo "true" || echo "false")
-          
+
           # if both files exist, set SHOULD_UPLOAD_ARTIFACTS to true
           SHOULD_UPLOAD_ARTIFACTS=$(( $HAS_WOKWI == "true" && $HAS_DIAGRAM == "true" ) && echo "true" || echo "false")
-          
+
           echo "upload_artifact=$SHOULD_UPLOAD_ARTIFACTS" >> "$GITHUB_OUTPUT"
-          
+
           ARTIFACT_NAME=$(echo "${{ matrix.example }}.${{ matrix.board }}" | tr '/' '-')
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
-          
+
           # mkdtemp
           # export PLATFORMIO_BUILD_DIR=$(mktemp -d)
           # echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
@@ -96,7 +133,7 @@ jobs:
           # for whatever reason, if we specify the build dir, it doesn't work
           # mkdir -p ${{ env.PLATFORMIO_BUILD_DIR }}
           pio ci --lib="." --board=${{ matrix.board }} --keep-build-dir 2>&1 | tee output.log
-          
+
           export PLATFORMIO_BUILD_DIR=$(grep -oP 'The following files/directories have been created in \K.*' output.log)
           echo "PLATFORMIO_BUILD_DIR=$PLATFORMIO_BUILD_DIR" >> "$GITHUB_ENV"
         env:
@@ -114,6 +151,8 @@ jobs:
           retention-days: 1
 
   wokwi:
+    name: "Wokwi / ${{ matrix.example }} / ${{ matrix.board }} / ${{ matrix.os }}"
+
     runs-on: ${{ matrix.os }}
 
     needs: platformio
@@ -121,7 +160,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ubuntu-latest]
 
         example:
           - "MPU6050/BasicReadings"
@@ -154,6 +193,6 @@ jobs:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
           timeout: 60000
           path: ./examples/${{ matrix.example }}
-          scenario: 'scenario.yml'
-          diagram_file: 'diagram.${{ matrix.board }}.json'
-          elf: '${{ github.workspace }}/build/${{ matrix.board }}/firmware.elf'
+          scenario: "scenario.yml"
+          diagram_file: "diagram.${{ matrix.board }}.json"
+          elf: "${{ github.workspace }}/build/${{ matrix.board }}/firmware.elf"
