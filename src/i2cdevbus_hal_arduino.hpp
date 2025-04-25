@@ -128,7 +128,7 @@ static inline int i2cdev_arduino_transfer(
                                   (uint8_t)chunk,
                                   (uint8_t)doStop);
 #else
-                wire->requestFrom(addr, chunk, doStop);
+                wire->requestFrom((uint8_t)addr, chunk, doStop);
 #endif
                 size_t got = wire->available();
                 while (got < chunk)
