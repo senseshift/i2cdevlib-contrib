@@ -1,209 +1,112 @@
-#ifndef __I2CDEVLIB_PCA9685_HPP__
-#define __I2CDEVLIB_PCA9685_HPP__
+#ifndef I2CDEVLIB_PCA9685_HPP_
+#define I2CDEVLIB_PCA9685_HPP_
 
 #include "i2cdev/pca9685.h"
-#include "i2cdevbus.hpp"
 
 #ifdef ARDUINO
 #include <Arduino.h>
 #endif
 
-namespace i2cdev {
-    class PCA9685 {
-      public:
-#ifdef I2CDEV_DEFAULT_BUS
-        PCA9685(uint8_t addr = PCA9685_I2CADDR_BASE, I2CDevBus& bus = I2CDEV_DEFAULT_BUS) : _addr(addr), _bus(bus) {}
+namespace i2cdev
+{
+    class PCA9685 : public pca9685_dev_t
+    {
+        uint32_t _oscillator_freq = PCA9685_OSCILLATOR_FREQ;
+        uint8_t _prescale;
+
+    public:
+#ifdef I2CDEVLIB_DEFAULT_BUS
+        PCA9685(uint8_t addr = PCA9685_I2CADDR_BASE, i2cdev_bus_t& bus = I2CDEVLIB_DEFAULT_BUS)
 #else
-        PCA9685(uint8_t addr, I2CDevBus& bus) : _addr(addr), _bus(bus) {}
+        PCA9685(uint8_t addr, i2cdev_bus_t& bus)
 #endif
-
-        inline void setOscillatorFrequency(uint32_t freq) { this->_oscillator_freq = freq; }
-
-        [[nodiscard]] inline auto reset() -> i2cdev_result_t
         {
-            return this->_bus.writeReg8(
-                this->_addr,
-                PCA9685_REG_MODE1,
-                static_cast<uint8_t>(PCA9685_MODE1_RESTART)
-            );
+            this->addr = addr;
+            this->i2cdev = &bus;
         }
 
-        [[nodiscard]] inline auto sleep() -> i2cdev_result_t
+        void setOscillatorFrequency(uint32_t freq) { this->_oscillator_freq = freq; }
+
+        [[nodiscard]] auto reset() -> i2cdev_result_t
         {
-            return this->_bus.updateReg16(
-                this->_addr,
-                PCA9685_REG_MODE1,
-                PCA9685_MODE1_SLEEP,
-                PCA9685_MODE1_SLEEP
-            );
+            return static_cast<i2cdev_result_t>(pca9685_reset(this));
         }
 
-        [[nodiscard]] inline auto wakeup() -> i2cdev_result_t
+        [[nodiscard]] auto sleep() -> i2cdev_result_t
         {
-            return this->_bus.updateReg16(
-                this->_addr,
-                PCA9685_REG_MODE1,
-                PCA9685_MODE1_SLEEP,
-                0
-            );
+            return static_cast<i2cdev_result_t>(pca9685_sleep(this));
+        }
+
+        [[nodiscard]] auto wakeup() -> i2cdev_result_t
+        {
+            return static_cast<i2cdev_result_t>(pca9685_wakeup(this));
         }
 
         [[nodiscard]] auto restart() -> i2cdev_result_t
         {
-            uint8_t mode1;
-
-            auto result = this->_bus.readReg8(this->_addr, PCA9685_REG_MODE1, &mode1);
-            if (result != I2CDEV_RESULT_OK) {
-                return result;
-            }
-
-            // Check if the RESTART bit is set
-            if ((mode1 & PCA9685_MODE1_RESTART) == 0) {
-                return I2CDEV_RESULT_OK;
-            }
-
-            result = this->wakeup();
-            if (result != I2CDEV_RESULT_OK) {
-                return result;
-            }
-
-            i2cdev_platform_sleep_us(500);
-
-            result = this->reset();
-
-            return result;
+            return static_cast<i2cdev_result_t>(pca9685_restart(this));
         }
 
-        [[nodiscard]] inline auto setFrequency(float freq) -> i2cdev_result_t
+        [[nodiscard]] auto setFrequency(float freq) -> i2cdev_result_t
         {
-            // Clamp frequency
-            freq = (freq > PCA9685_FREQ_MAX) ? PCA9685_FREQ_MAX : (freq < PCA9685_FREQ_MIN) ? PCA9685_FREQ_MIN : freq;
-
-            // Datasheet 7.3.5
-            auto prescale = static_cast<uint8_t>(roundf((float) this->_oscillator_freq / (4096.0 * freq)) - 1);
-
-            return this->setPrescale(prescale);
+            return static_cast<i2cdev_result_t>(pca9685_set_frequency(this, freq, this->_oscillator_freq));
         }
 
         [[nodiscard]] auto setPrescale(uint8_t prescale, bool extClk = false) -> i2cdev_result_t
         {
-            // Don't check if larger than PCA9685_PRESCALE_MAX (255), since it's an uint8_t
-            if (prescale < PCA9685_PRESCALE_MIN) {
-                I2CDEVLIB_LOG_E("Prescale value out of range: %i; must be between 3 and 255", prescale);
-                return I2CDEV_RESULT_ERROR;
+            const auto result = pca9685_set_prescale(this, prescale, extClk);
+            if (result == I2CDEV_RESULT_OK)
+            {
+                this->_prescale = prescale;
             }
 
-            uint8_t mode1;
-            auto result = this->_bus.readReg8(this->_addr, PCA9685_REG_MODE1, &mode1);
-            if (result != I2CDEV_RESULT_OK) {
-                return result;
-            }
-
-            mode1 = (mode1 & ~PCA9685_MODE1_RESTART) | PCA9685_MODE1_SLEEP;
-            if (extClk) {
-                mode1 |= PCA9685_MODE1_EXTCLK;
-            }
-
-            result = this->_bus.writeReg8(this->_addr, PCA9685_REG_MODE1, mode1);
-            if (result != I2CDEV_RESULT_OK) {
-                return result;
-            }
-
-            result = this->_bus.writeReg8(this->_addr, PCA9685_REG_PRESCALE, prescale);
-            if (result != I2CDEV_RESULT_OK) {
-                return result;
-            }
-
-            this->_prescale = prescale;
-
-            mode1 = (mode1 & ~PCA9685_MODE1_SLEEP) | PCA9685_MODE1_RESTART | PCA9685_MODE1_AI;
-
-            return this->_bus.writeReg8(this->_addr, PCA9685_REG_MODE1, mode1);
+            return static_cast<i2cdev_result_t>(result);
         }
 
         [[nodiscard]] auto readPrescale() -> i2cdev_result_t
         {
             uint8_t prescale;
-            auto result = this->_bus.readReg8(this->_addr, PCA9685_REG_PRESCALE, &prescale);
-            if (result != I2CDEV_RESULT_OK) {
-                return result;
+            const auto result = pca9685_read_prescale(this, &prescale);
+            if (result == I2CDEV_RESULT_OK)
+            {
+                this->_prescale = prescale;
             }
 
-            this->_prescale = prescale;
-
-            return result;
+            return static_cast<i2cdev_result_t>(result);
         }
 
         [[nodiscard]] auto setChannelOnOff(uint8_t led, int16_t on_value, int16_t off_value) -> i2cdev_result_t
         {
-            if (led > 15) {
-                I2CDEVLIB_LOG_E("LED index out of range: %i; must be between 0 and 15", led);
-                return I2CDEV_RESULT_ERROR;
-            }
-
-            uint8_t data[4] = {
-                static_cast<uint8_t>(on_value & 0xFF),
-                static_cast<uint8_t>(on_value >> 8),
-                static_cast<uint8_t>(off_value & 0xFF),
-                static_cast<uint8_t>(off_value >> 8)
-            };
-
-            return this->_bus.writeReg8(
-                this->_addr,
-                PCA9685_REG_LED0_ON_L + (led * 4),
-                4,
-                data
-            );
+            return static_cast<i2cdev_result_t>(pca9685_set_channel_on_off(this, led, on_value, off_value));
         }
 
         [[nodiscard]] auto setChannel(uint8_t led, uint16_t value, bool invert = false) -> i2cdev_result_t
         {
-            // Clamp value to 12 bits
-            value = (value > PCA9685_VALUE_MAX) ? PCA9685_VALUE_MAX : value;
-
-            if (invert) {
-                if (value == 0) {
-                    return this->setChannelOnOff(led, PCA9685_VALUE_FULL_ON, 0);
-                }
-                if (value == PCA9685_VALUE_MAX) {
-                    return this->setChannelOnOff(led, 0, PCA9685_VALUE_FULL_ON);
-                }
-                return this->setChannelOnOff(led, 0, PCA9685_VALUE_MAX - value);
-            } else {
-                if (value == PCA9685_VALUE_MAX) {
-                    return this->setChannelOnOff(led, PCA9685_VALUE_FULL_ON, 0);
-                }
-                if (value == 0) {
-                    return this->setChannelOnOff(led, 0, PCA9685_VALUE_FULL_ON);
-                }
-                return this->setChannelOnOff(led, 0, value);
-            }
+            return static_cast<i2cdev_result_t>(pca9685_set_channel(this, led, value, invert));
         }
 
-        /// Arduino-style API for Servos
-        ///
-        /// @param led The LED number (0-15)
-        /// @param microseconds The pulse length in microseconds
-        ///
-        /// @return The result of the operation
-        /// @retval I2CDEV_RESULT_OK if the operation was successful
-        [[nodiscard]] inline auto writeMicroseconds(uint8_t led, uint16_t microseconds) -> i2cdev_result_t
+        [[nodiscard]] auto setChannel(uint8_t led, float value, bool invert = false) -> i2cdev_result_t
         {
-            return this->setChannel(
-                led,
-                static_cast<uint16_t>(
-                    microseconds / (1000000.0 / this->_oscillator_freq * (this->_prescale + 1))
-                )
-            );
+            return this->setChannel(led, static_cast<uint16_t>(value * 4095.0f), invert);
         }
 
-      private:
-        uint8_t _addr;
-        I2CDevBus& _bus;
+        /**
+         * @brief Arduino-style API for Servos
+         *
+         * @param [in] channel The LED number (0-15)
+         * @param [in] microseconds The pulse length in microseconds
+         *
+         * @retval I2CDEV_RESULT_OK if the operation was successful
+         */
+        [[nodiscard]] auto writeMicroseconds(uint8_t channel, uint16_t microseconds) -> i2cdev_result_t
+        {
+            auto ticks = static_cast<uint16_t>(
+                microseconds / (1e6f / _oscillator_freq * (_prescale + 1))
+            );
 
-        uint32_t _oscillator_freq = PCA9685_OSCILLATOR_FREQ;
-        uint8_t _prescale;
+            return this->setChannel(channel, ticks);
+        }
     };
 }
 
-#endif // __I2CDEVLIB_PCA9685_HPP__
+#endif // I2CDEVLIB_PCA9685_HPP_

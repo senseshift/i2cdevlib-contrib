@@ -1,4 +1,4 @@
-#include <I2CDevLib.h>
+#include <i2cdevbus_hal_arduino.hpp>
 #include <i2cdev/pca9685.hpp>
 
 #define NUM_SERVOS (16)

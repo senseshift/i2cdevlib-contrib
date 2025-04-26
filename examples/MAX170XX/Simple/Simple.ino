@@ -1,4 +1,4 @@
-#include <I2CDevLib.h>
+#include <i2cdevbus_hal_arduino.hpp>
 #include <i2cdev/max170xx.hpp>
 
 i2cdev::MAX17048 max17048;
@@ -27,8 +27,16 @@ void setup() {
 }
 
 void loop() {
-    auto voltage = max17048.readVoltage();
-    auto soc = max17048.readSoc();
+    auto voltage_result = max17048.getVoltage();
+    auto soc_result = max17048.getSoc();
+
+    if (!voltage_result.ok() || !soc_result.ok()) {
+        Serial.println("Error reading values from MAX170XX!");
+        delay(1000);
+    }
+
+    auto voltage = voltage_result.value;
+    auto soc = soc_result.value;
 
     Serial.print("Voltage: "); Serial.print(voltage); Serial.print(" V");
     Serial.print("    SoC: "); Serial.print(soc); Serial.println(" %");

@@ -1,4 +1,4 @@
-#include <I2CDevLib.h>
+#include <i2cdevbus_hal_arduino.hpp>
 #include <i2cdev/mpu6050.hpp>
 
 i2cdev::MPU6050 mpu6050;
@@ -17,7 +17,6 @@ void setup(void) {
 
     if (mpu6050.check() != I2CDEV_RESULT_OK) {
         Serial.println("Failed to find MPU6050 chip");
-        while (true) {}
     }
     Serial.println("MPU6050 Found!");
 
@@ -35,7 +34,7 @@ void setup(void) {
 }
 
 void loop() {
-    auto measurements = mpu6050.getAllMeasurements();
+    auto measurements = mpu6050.getAllMeasurements().value;
 
     Serial.print("Accelerometer X: "); Serial.print(measurements.accel.x); Serial.print(" Y: "); Serial.print(measurements.accel.y); Serial.print(" Z: "); Serial.println(measurements.accel.z);
     Serial.print("Gyroscope     X: "); Serial.print(measurements.gyro.x); Serial.print(" Y: "); Serial.print(measurements.gyro.y); Serial.print(" Z: "); Serial.println(measurements.gyro.z);

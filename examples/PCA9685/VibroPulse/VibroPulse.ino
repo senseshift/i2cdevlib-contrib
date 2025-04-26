@@ -1,4 +1,4 @@
-#include <I2CDevLib.h>
+#include <i2cdevbus_hal_arduino.hpp>
 #include <i2cdev/pca9685.hpp>
 
 #define NUM_MOTORS (4)
@@ -35,9 +35,9 @@ void setup() {
 }
 
 void pulse(uint8_t pin) {
-    pca9685.setChannel(pin, 4095);
+    pca9685.setChannel(pin, (uint16_t) 4095);
     delay(250);
-    pca9685.setChannel(pin, 0);
+    pca9685.setChannel(pin, (uint16_t) 0);
 }
 
 uint8_t currentVibro = 0;
