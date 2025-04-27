@@ -1,6 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
-    "name": "I2CDevLibContrib",
+    "name": "i2cdevlib-contrib-hal-arduino",
     "version": "0.1.0",
     "repository": {
         "url": "git@github.com:senseshift/i2cdevlib-contrib.git",
